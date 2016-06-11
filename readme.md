@@ -33,14 +33,14 @@ Stahovací plugin ulozto.cz pro Synology DiskStation
 ==========
 
 ###### Instalace search a host pluginu:
-  1. Pluginy pro Download Station tvoří dva subory - *[ulozto.dlm](raw/master/ulozto.dlm)* (9392B) a *[ulozto.host](raw/master/ulozto.host)* (817B). Stahněte si je, následně je nanstalujeme v nastavení Download Station.
+  1. Pluginy pro Download Station tvoří dva subory - *[ulozto.dlm](ulozto.dlm?raw=true)* (9392B) a *[ulozto.host](ulozto.host?raw=true)* (817B). Stahněte si je, následně je nanstalujeme v nastavení Download Station.
   2. DLM plugin nainstalujte v *Nastavení/Hledani -> BT/Přidat*.
   3. Host plugin nainstalujte v *Nastavení/Hostování -> suborů/Přidat*.
   4. Skontrolovat zda jsou správně stažené se dá i tak, že je skusíte otevřít například WinRarem. Uvnítř je jeden subor "ulozto" a když stisknete alt+v měl by vám ukázat zdrojové kódy. Další možnost je, změnít souborům příponu na ".tgz" a pak je otevřít jako archív.
 
 ###### Instalace služby pro Ulozto:
   1. V "Centrum balíčků" nainstalujte balíček "Node.js v4".
-  2. Balíček pro instalaci *[ulozto.spk](raw/master/ulozto.spk)* (46805B) zatím není podepsaný pomocí GPG a proto je třeba v nastavení "Centrum balíčků" povolit instalaci pro "Jakýkoli vydavatel".
+  2. Balíček pro instalaci *[ulozto.spk](ulozto.spk?raw=true)* (46805B) zatím není podepsaný pomocí GPG a proto je třeba v nastavení "Centrum balíčků" povolit instalaci pro "Jakýkoli vydavatel".
   3. Nainstalujeme v "Centrum balíčků" pomocí tlačítka "Ruční instalace". Najdeme soubor *ulozto.spk* a nainstalujeme.
   4. Po instalaci skontrolujte, zda proběhla úspěšně a v "Centrum balíčků" je u balíčku napsáno zeleně "Spuštěno". Případně můžete ověřit, že služba běží navštívením http://diskstation:8034/.
 
