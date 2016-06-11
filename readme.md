@@ -7,42 +7,48 @@ This plugin allows you to search and download movies from ulozto.cz file sharing
 
 ![](download.jpg)
 
-Requirements:
-  - nodejs (can be downloaded in Synology Package Center)
-  - request nodejs package "npm install request"
+###### Requirements:
+  - **nodejs** (can be downloaded in Synology Package Center)
+  - request nodejs package "npm install request" (installed by ulozto.spk)
 
-Installation:
-  - Download Station -> Settings -> Searching BT -> Add service -> ulozto.dlm
-  - Download Station -> Settings -> File hosting -> Add service -> ulozto.host
-  - Copy /service files somewhere on your diskstation and start service from shell by typing "node server.js", use "nohup" command for keeping it running even after disconnection from telnet. Refer to synology forums if you want to schedule this service to be started automatically at system startup...
-  - Verify whether service is running by opening http://192.168.1.XXX:8034/ in your web browser
+###### Installation:
+  - Download Station -> Settings -> Searching BT -> Add service -> **ulozto.dlm**
+  - Download Station -> Settings -> File hosting -> Add service -> **ulozto.host**
+  - Package Center -> Settings -> Allow installation of package published by: "Any publisher"
+  - Package Center -> Manual Install -> Browse -> **ulozto.spk**
+  - Verify whether service is running by opening http://diskstation:8034/ in your web browser
 
-Features:
+###### Features:
   - single click download
   - automatic captcha cracking
   - unlimited parallel downloads
   - rating score is displayed as number of peers by this equation "PEERS = 100 + rating*10". Rating 0 shows 100 peers, rating 1 as 110 peers ... rating 10 as 200 peers. Rating -1 as 90 peers, rating -5 as 50 peers...  
   - automatic classification of download type depending on file extension
 
-Todo list:
+###### Todo list:
   - Rewrite captcha cracker into PHP, so nodejs service won't be necessary anymore
 
 
-Stahovaci plugin ulozto.cz pre synology diskstation
+Stahovací plugin ulozto.cz pro Synology DiskStation
 ==========
 
-  1. **Instalacia search a host pluginu:** Pluginy pre download station tvoria dva subory - *ulozto.dlm* a *ulozto.host*. Instalujeme ich cez nastavenia v download statione - dlm plugin ulozime cez *nastavenia/hledani bt/pridat* a host plugin cez *nastavenia/hostovanie suborov/pridat*. Dolezite je tieto pluginy spravne stiahnut z githubu. Treba kliknut na ulozto.dlm a potom stiahnut kliknutim na tlacitko "raw", velkost suboru by mala byt 9.31kB a ulozto.host by mal mat 817 bajtov. Skontrolovat ci su spravne stiahnute sa da aj tak, ze ich skusis otvorit s WinRarom. Vovnutri je jeden subor "ulozto" a ked stlacis alt+v mal by ti ukazat konkretne zdrojove kody
-  2. **Nakopirovanie skriptu:** Potrebujeme sa prihla na DSM cez sambu, (network sharing), tam si niekde vytvorit adresar napr. "uloztoservice" a tam skopirovat subory z adresara [SynologySearchEngine/Plugin/service](https://github.com/gabonator/Work-in-progress/tree/master/SynologySearchEngine/Plugin/service) (dokopy 7 suborov). Po prihlaseni na DSM cez telnet alebo ssh alebo putty prihlaseny na dsm, s pomocou prikazov "ls", "cd ..", "cd /", "cd", "pwd" sa dostan do adresara ktory si vytvoril. U mna je to "cd /volume1/shared/ulozto/service". Prikazom "ls" skontroluj ci tam naozaj je pritomny ten subor server.js.
-  3. **Kontrola ci mas nainstalovany node js:** cez telnet zavolaj "node" a potom skus napisat "4+4" a malo by to vypisat hodnotu 8. Node vypnes ctrl+c, ctrl+c. Ak ho nemas nainstalovany, musis ist cez webove rozhranie do package managera (centrum balicku) a stiahnut balicek "node.js"
-  4. **Spustenie skriptu:** ak sme v spravnom adresari so skriptom, a nodejs mame nainstalovany, zavolame "node server.js", pravdepodobne to napise error: "Cannot find module 'request'", ten doinstalujeme zavolanim "npm install request".
-  5. **Otestovanie skriptu:** Otvor si http://diskstation:8034 cez webovy browser a skus nieco napisat do editboxu, mozes sledovat taktiez co robi konzola s beziacim servisom
-  6. **Spustenie servisu v pozadi:** Ak ti server bezi, po odhlaseni z telnetu sa server vypne. Aby nam ostal bezat aj po odhlaseni, zavolame prikaz "nohup node server.js", samozrejme ze toto spustenie treba vykonat vzdy po restarte diskstationu, popripade to treba nejak nastavit aby sa to spustilo po starte
+###### Instalace search a host pluginu:
+  1. Pluginy pro Download Station tvoří dva subory - *[ulozto.dlm](ulozto.dlm?raw=true)* (9392B) a *[ulozto.host](ulozto.host?raw=true)* (817B). Stahněte si je, následně je nanstalujeme v nastavení Download Station.
+  2. DLM plugin nainstalujte v *Nastavení/Hledani -> BT/Přidat*.
+  3. Host plugin nainstalujte v *Nastavení/Hostování -> suborů/Přidat*.
+  4. Skontrolovat zda jsou správně stažené se dá i tak, že je skusíte otevřít například WinRarem. Uvnítř je jeden subor "ulozto" a když stisknete alt+v měl by vám ukázat zdrojové kódy. Další možnost je, změnít souborům příponu na ".tgz" a pak je otevřít jako archív.
+
+###### Instalace služby pro Ulozto:
+  1. V "Centrum balíčků" nainstalujte balíček "Node.js v4".
+  2. Balíček pro instalaci *[ulozto.spk](ulozto.spk?raw=true)* (46805B) zatím není podepsaný pomocí GPG a proto je třeba v nastavení "Centrum balíčků" povolit instalaci pro "Jakýkoli vydavatel".
+  3. Nainstalujeme v "Centrum balíčků" pomocí tlačítka "Ruční instalace". Najdeme soubor *ulozto.spk* a nainstalujeme.
+  4. Po instalaci skontrolujte, zda proběhla úspěšně a v "Centrum balíčků" je u balíčku napsáno zeleně "Spuštěno". Případně můžete ověřit, že služba běží navštívením http://diskstation:8034/.
+
 
 Mozne problemy:
-  - Nemoznost pridat vyhladavaci plugin do download station - ak je subor ulozto.dlm alebo ulozto.host zle stiahnuty, download station ho odmietne nainstalovat. Skontroluj podla bodu 1
-  - Ak download station stahuje podozrivo male, cca 40 kilobajtove subory, znamena to ze nebezi servis. Skontroluj podla bodu 5 a 6
+  - Nemožnost přidat vyhladávací plugin do Download Station - Pokud je subor ulozto.dlm, nebo ulozto.host nesprávně stažený, nebo poškozený, Download Station ho odmietne nainstalovat.
+  - Pokud Download Station stahuje podezžele malé, cca 40 až 70 kilobajtove subory, znamená to že neběží služba. V "Centrum balíčků" skontroluj, zda běží. Log soubor je k nahlédnutí také tam.
 
 Contributors:
-  - Milos Svasek (svasek) 
+  - [Milos Svasek](/svasek)
   - Meenya
-
