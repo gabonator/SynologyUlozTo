@@ -3,9 +3,9 @@ Ulozto.cz synology download station plugin
 
 This plugin allows you to search and download movies from ulozto.cz file sharing service directly from download station.
 
-![](search.jpg)
+![](res/search.jpg)
 
-![](download.jpg)
+![](res/download.jpg)
 
 Requirements:
   - nodejs (can be downloaded in Synology Package Center)
