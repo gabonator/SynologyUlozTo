@@ -50,5 +50,6 @@ Mozne problemy:
   - Pokud Download Station stahuje podezžele malé, cca 40 až 70 kilobajtove subory, znamená to že neběží služba. V "Centrum balíčků" skontroluj, zda běží. Log soubor je k nahlédnutí také tam.
 
 Contributors:
-  - [Milos Svasek](https://github.com/svasek)
+  - [Gabriel Valky](https://github.com/gabonator) (gabonator)
+  - [Miloš Svašek](https://github.com/svasek) (svasek)
   - [Meenya](https://github.com/meenya)
