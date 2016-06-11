@@ -32,13 +32,13 @@ Stahovaci plugin ulozto.cz pre synology diskstation
 ==========
 
   1. **Instalacia search a host pluginu:** Pluginy pre download station tvoria dva subory - *ulozto.dlm* a *ulozto.host*. Instalujeme ich cez nastavenia v download statione - dlm plugin ulozime cez *nastavenia/hledani bt/pridat* a host plugin cez *nastavenia/hostovanie suborov/pridat*. Dolezite je tieto pluginy spravne stiahnut z githubu. Treba kliknut na ulozto.dlm a potom stiahnut kliknutim na tlacitko "raw", velkost suboru by mala byt 9.31kB a ulozto.host by mal mat 817 bajtov. Skontrolovat ci su spravne stiahnute sa da aj tak, ze ich skusis otvorit s WinRarom. Vovnutri je jeden subor "ulozto" a ked stlacis alt+v mal by ti ukazat konkretne zdrojove kody
-  2. **Instalacia servisu:** Stahovaci servis potrebuje pre svoju pracu ininstalovany balicek Nodejs. V Centre balickov dame vyhladat "nodejs" a nainstalujeme najnovsiu verziu. V centre balickov klikneme na nastavenia a pre "Uroven doveryhodnosti" zvolime "Akykolvek vydavatel". Nastavenia zatvorime a klikneme na "Rucna instalacia", vyberieme subor "ulozto.spk" a pockame na dokoncenie instalacie
+  2. **Instalacia servisu:** Stahovaci servis potrebuje pre svoju pracu nainstalovany balicek *Nodejs*. V Centre balickov dame vyhladat *nodejs* a nainstalujeme najnovsiu verziu. V centre balickov klikneme na nastavenia a pre *Uroven doveryhodnosti* zvolime *Akykolvek vydavatel*. Nastavenia zatvorime a klikneme na *Rucna instalacia*, vyberieme subor *ulozto.spk* a pockame na dokoncenie instalacie
   3. **Otestovanie skriptu:** Otvor si http://diskstation:8034, mala by sa zobrazit jednoducha stranka s jedinym editboxom. Skus do neho nieco zapisat (napr. "film") aby si overil funkcnost servisu. Ak sa stranka neda zobrazit, mame problem.
 
 Mozne problemy:
   - Nemoznost pridat vyhladavaci plugin do download station - ak je subor ulozto.dlm alebo ulozto.host zle stiahnuty, download station ho odmietne nainstalovat. Skontroluj podla bodu 1
   - Ak download station stahuje podozrivo male, cca 40 kilobajtove subory, znamena to ze nebezi servis a stahujeme iba web stranku. Skontroluj podla bodu 3
-  - V pripade problemov vyhladaj Ulozto Service v Centre Balickov, klikni na "Zobrazit protokoly" a posli nam ich aj s popisom problemu
+  - V pripade problemov vyhladaj Ulozto Service v Centre Balickov, klikni na *Zobrazit protokoly* a posli nam ich aj s popisom problemu
 
 Contributors:
   - Gabriel Valky (gabonator)
