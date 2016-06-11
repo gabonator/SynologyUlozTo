@@ -1,5 +1,9 @@
 #!/bin/sh
 
+if [ -z "$SYNOPKG_PKGNAME" ]; then
+	SYNOPKG_PKGNAME="Ulozto"
+fi
+
 PACKAGE_DIR="/var/packages/${SYNOPKG_PKGNAME}"
 LOGFILE="${PACKAGE_DIR}/ulozto.log"
 PIDFILE="${PACKAGE_DIR}/ulozto.pid"
@@ -12,7 +16,7 @@ ServiceStatus() {
 	if [ -f "$PIDFILE" ]; then
 		PID=$(cat "$PIDFILE")
 
-		if [ -n "$(ps | grep -e $PID)" ]; then
+		if [ -n "$(ps -e -o pid | grep $PID)" ]; then
 			echo "${SYNOPKG_PKGNAME} service is running ..."
 			return 1  # is running
 		else
