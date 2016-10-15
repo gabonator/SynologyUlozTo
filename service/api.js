@@ -267,15 +267,19 @@ function getSearchResults(term, onResponse)
     }
     return result;
   }
-
+    
   request({
-    url: searchUrl,
-    method: "GET",
-    headers: {"X-Requested-With": "XMLHttpRequest"}
-  }, function(error, response, body) {
-    var data = JSON.parse(body.match("var kn = (\\{.*?\\});")[1]);
-    var key = body.match("kapp\\(kn\\[\\\"(.*)\\\"")[1];
-    var result = decode(data, data[key]);
-    onResponse(result);
+      url: searchUrl,
+      method: "GET",
+      headers: {"X-Requested-With": "XMLHttpRequest"}
+    }, function(error, response, body)
+    {
+      body = body.split("\n").join("").split("\\").join("");
+          
+      var data = JSON.parse(body.match("var kn = (\\{.*?\\})")[1]);
+      var key = body.match("kn\\[\"(.*?)\"\\]")[1];
+
+      var result = decode(data, data[key]);
+      onResponse(result);
   });
 }
