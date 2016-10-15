@@ -31,9 +31,16 @@ function getDownloadLink(lnk, captcha, handler)
   processCaptcha = captcha;
   mainurl = "https://ulozto.cz" + lnk;
 
-  doMainRequest(function()
-  {
-    doCaptcha();
+  myRequest(mainurl, function(body) {
+    body = body.split("\r").join("").split("\n").join("#");
+            
+    keepCookie  = body.match("(ULOSESSID=.*?);")[1];
+    keepCookie += "; "+body.match("(uloztoid=.*?);")[1];
+    //keepCookie += "; maturity=adult";
+            
+    var newLocation = body.match("#Location: (.*?)#");
+    mainurl = newLocation[1];
+    doMainRequest(doCaptcha);
   });
 }
 
@@ -47,8 +54,6 @@ function mySpawn(command, args, handler)
     else
       cmdline += " " + args[i];
   }
-
-  console.log("spawn: " + cmdline);
 
   const spawn = require('child_process').spawn;
   const proc = spawn('curl', args);
@@ -84,13 +89,14 @@ function myRequest(url, handler, data)
   if ( keepCookie != "" )
   {
     args.push("-H");
-    args.push("Cookie: "+keepCookie+"; uloztoid="+form.cid);
-    args.push("-H");
-    args.push("X-Requested-With: XMLHttpRequest");
+    args.push("Cookie: "+keepCookie);
   }
-
+    
   if ( typeof(data) != "undefined" )
   {
+    args.push("-H");
+    args.push("X-Requested-With: XMLHttpRequest");
+
     var q = "";
     for ( var i in form )
     {
@@ -112,23 +118,16 @@ function doMainRequest(onFinish)
     var result = html.match(regex);
     if (result && result.length > 1)
       return result[1] + "";
+    else
+      console.log("ERROR: Cannot find form field '"+key+"'!");
     return "?";
   }
 
-  //console.log("*********DOMAINREQUEST***********");
   myRequest(mainurl, function(body) {
-
-    body = body.split("\n").join("");
-
-    var keepCookieMatch = body.match("(ULOSESSID=.*?);");
-    if ( !keepCookieMatch || keepCookieMatch.length != 2 )
-    {
-      console.log("ERROR: ULOSESSID not found: <<<"+body+">>>");
-      return;
-    }
-    keepCookie = keepCookieMatch[1];
-
-    var formhtmlMatch = body.match("id=\"frm-downloadDialog-freeDownloadForm\"(.*)</form>");
+    body = body.split("\r").join("").split("\n").join("");
+            
+    var formId = "frm-download-freeDownloadTab-freeDownloadForm";
+    var formhtmlMatch = body.match("id=\""+formId+"\"(.*)</form>");
     if ( !formhtmlMatch || formhtmlMatch.length != 2 )
     {
       console.log("ERROR: FORM DATA not found: <<<"+body+">>>");
@@ -140,11 +139,11 @@ function doMainRequest(onFinish)
     form._token_ = getvar(formhtml, "_token_");
     form.ts = getvar(formhtml, "ts");
     form.cid = getvar(formhtml, "cid");
-    form.adi = getvar(formhtml, "adi");
+    form.adi = getvar(formhtml, "adi"); // ="f" for reloaded captcha
     form.sign_a = getvar(formhtml, "sign_a");
     form.sign = getvar(formhtml, "sign");
     form.captcha_type = "xapca";
-    form.do = "downloadDialog-freeDownloadForm-submit";
+    form._do = "download-freeDownloadTab-freeDownloadForm-submit";            
 
     onFinish();
   })
@@ -152,8 +151,6 @@ function doMainRequest(onFinish)
 
 function doCaptcha()
 {
-  //console.log("*********DOCAPTCHA***********");
-
   myRequest(captchaurl + (new Date).getTime(), function(data)
   {
     data = data.substr(data.indexOf("\r\n\r\n")+4);
@@ -174,8 +171,6 @@ function tryCaptcha(code)
 
 function requestDownload(onResponse)
 {
-  //console.log("*********REQUESTDOWNLOAD***********");
-
   myRequest(mainurl, function(data)
   {
     data = data.substr(data.indexOf("\r\n\r\n")+4);
@@ -186,7 +181,6 @@ function requestDownload(onResponse)
 function processResponse(data)
 {
   var json = JSON.parse(data);
-  //console.log("Got response status:"+json.status);
 
   if ( json.status == "error" )
   {
@@ -286,11 +280,18 @@ function getSearchResults(term, onResponse)
     }, function(error, response, body)
     {
       body = body.split("\n").join("").split("\\").join("");
+      var dataraw = body.match("var kn = (\\{.*?\\})");
+      if ( !dataraw || dataraw.length != 1)
+        console.log("Failed to parse json response (contents)");
           
-      var data = JSON.parse(body.match("var kn = (\\{.*?\\})")[1]);
-      var key = body.match("kn\\[\"(.*?)\"\\]")[1];
-
+      var data = JSON.parse(dataraw[1]);
+      var keyraw = body.match("kn\\[\"(.*?)\"\\]");
+      if ( !keyraw || keyraw.length != 1)
+        console.log("Failed to parse json response (key)");
+          
+      var key = keyraw[1];
       var result = decode(data, data[key]);
+          
       onResponse(result);
   });
 }
