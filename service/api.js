@@ -236,34 +236,45 @@ function getSearchResults(term, onResponse)
     return new Buffer(str, "binary").toString("utf8");
   }
 
+  var safematch = function(item, regexp)
+  {
+    var m = item.match(regexp);
+    if ( m && m.length == 2 )
+      return m[1];
+    return "";
+  }
+    
   var decode = function(data, key)
   {
   	var decoder = new decoderClass(key);
     var result = [];
-    var subdata = [];
-
-  	var index = 0;
+    var first = true;
+      
     for (var i in data)
     {
-     subdata[index % 7] = trim(decoder.decrypt(data[i]));
-     if ( index % 7 == 6 )
-     {
-       var url = subdata[0];
-       var mainInfo = subdata[6].split("\n").join("");
-       var img = mainInfo.match("\\<img src=\\\"(.*?)\\\"");
-       img = ( img && img.length > 1 ) ? "<img src='"+img[1]+"'>" : "";
-       var rating = mainInfo.match("fileRating.*?em>(.*?)<");
-       rating = ( rating && rating.length > 1 ) ? rating[1] : "";
-       var name = mainInfo.match("class=\"name.*?\">(.*?)<");
-       name = ( name && name.length > 1 ) ? name[1] : "";
-       var size = mainInfo.match("fileSize\">(.*?)<");
-       size = ( size && size.length > 1 ) ? size[1] : "";
-       var time = mainInfo.match("fileTime\">(.*?)<");
-       time = ( time && time.length > 1 ) ? time[1] : "";
+      var item = trim(decoder.decrypt(data[i])).split("\n").join("");
+      item = item.split("\t").join("");
+     
+      // last item is corrupted, first is always mtbr.abi
+      if ( item.indexOf("title") == -1 || first )
+      {
+        first = false;
+        continue;
+      }
 
-       result.push({url:url, img:img, rating:rating, name:name, size:size, time:time, data:subdata});
-     }
-     index++;
+      var url = safematch(item, "class=\"name\".*?href=\"(.*?)\"");
+      var img = "<img src=\"https:" + safematch(item, "class=\"img.*?src=\"(.*?)\"") + "\">";
+      var rating = safematch(item, "<abbr title=\"Hodno.*?\">(.*?)</abbr>");
+      var name = safematch(item, "title=\"(.*?)\"");
+      var size = safematch(item, "<span>Velikost</span>(.*?)</li>");
+      var time = safematch(item, "<span>.?as</span>(.*?)</li>");
+      var type = safematch(item, "<span class=\"type\">(.*?)</span>");
+        
+      // skip locked files
+      if ( img.indexOf("/lock.") != -1 )
+        continue;
+        
+      result.push({url:url, img:img, rating:rating, name:name, size:size, time:time, type:type, data:item});
     }
     return result;
   }
