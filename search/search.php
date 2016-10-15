@@ -25,40 +25,40 @@ class SynoDLMSearchUlozto
 
   public function parse($plugin, $response) 
   {
-    $regex_key = "kapp\\(kn\\[\\\"(.*)\\\"";
-    $regex_data = "var kn = (\\{.*?\\});";
+    $response = str_replace("\n", "", $response);
+    $response = str_replace("\\", "", $response);
+      
+    $regex_key = "kn\\[\"(.*?)\"\\]";
+    $regex_data = "var kn = (\\{.*?\\})";
       
     preg_match("/".$regex_key."/", $response, $matches);
     $key = $matches[1];
 
     preg_match("/".$regex_data."/", $response, $matches);
     $raw_data = $matches[1];
+      
     $jsondata = json_decode($raw_data);
     $data = array();
     foreach ($jsondata as $key=>$value)
       $data[$key] = $value;
-    $result = "";
-
+      
     $this->blowfish->init($data[$key]);
-    $subdata = array();
-    $entries = 0;
     $skipFirst = true;
+    $entries = 0;
 
     foreach ($data as $row)
     {
-      $subdata[] = self::trim($this->blowfish->decrypt($row));
-
-      if ( count($subdata) == 7 )
+      if ( $skipFirst )
       {
-        if ( $skipFirst )
-          $skipFirst = false;
-        else
-        {
-          $this->pushEntry($plugin, $subdata);
-          $entries++;
-        }
-
-        $subdata = array();
+        $skipFirst = false;
+        continue;
+      }
+        
+      $contents = self::trim($this->blowfish->decrypt($row));
+      if (strpos($contents, "title") !== false)
+      {
+        $this->pushEntry($plugin, $contents);
+        $entries++;
       }
     }
 
@@ -78,20 +78,16 @@ class SynoDLMSearchUlozto
 
   private function pushEntry($plugin, $data)
   {
-    $url = $data[0];
-    $mainInfo = str_replace("\n", "", $data[6]);
+    $data = str_replace("\n", "", $data);
+    $data = str_replace("\t", "", $data);
 
-    $img = self::match($mainInfo, "\\<img src=\\\"(.*?)\\\"");
-    if ($img != "")
-      $img = "<img src='".$img."'>";
-
-    $rating = self::match($mainInfo, "fileRating.*?em>(.*?)<");
-    $name = self::match($mainInfo, "class=\"name.*?\">(.*?)<");
-    $size = self::match($mainInfo, "fileSize\">(.*?) (B|MB|GB|kB)<");
-    $time = self::match($mainInfo, "fileTime\">(.*?)<");
-
-    $image = self::match($mainInfo, "\\<img src=\\\"(.*?)\\\"");
-
+    $url = self::match($data, "class=\"name\".*?href=\"(.*?)\"");
+    $img = "<img src=\"https:".self::match($data, "class=\"img.*?src=\"(.*?)\"")."\">";
+    $rating = self::match($data, "<abbr title=\"Hodno.*?\">(.*?)<\\/abbr>");
+    $name = self::match($data, "title=\"(.*?)\"");
+    $size = self::match($data, "<span>Velikost<\\/span>(.*?) (B|MB|GB|kB)<\\/li>");
+    $time = self::match($data, "<span>.?as<\\/span>(.*?)<\\/li>");
+      
     $size = self::calculateSize($size[0], $size[1]);
 
     $hash = md5($url);

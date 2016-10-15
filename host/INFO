@@ -6,5 +6,5 @@
 "authentication": "no",
 "module": "host.php",
 "class": "SynoDLMHostUlozto",
-"description": "Ulozto file sharing service by valky.eu"
+"description": "Ulozto file sharing service by Ulozto devel team"
 }

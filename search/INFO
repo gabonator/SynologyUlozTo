@@ -1,7 +1,7 @@
 {
 "name": "ulozto",
 "displayname": "Ulozto.cz",
-"description": "Ulozto file sharing service by valky.eu",
+"description": "Ulozto file sharing service by Ulozto devel team",
 "version": "2.0",
 "site": "http://ulozto.cz",
 "module": "search.php",
