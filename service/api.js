@@ -17,6 +17,31 @@ var currentRequest = "";
 var lastRequest = "";
 var lastResponse = "";
 
+function _ASSERT(cond, message)
+{
+  if (!cond)
+    console.log("Assertion failed: " + message);
+}
+
+function myMatch(string, regexp)
+{
+  var result = string.match(regexp);
+
+  if (result == null || typeof(result) != "object")
+    return false;
+
+  if (result.length != 2)
+    return false;
+
+  return result[1];
+}
+
+function addFavourite(url)
+{
+  // call http://api.valky.eu/log/?get to get list of recent downloads
+  request("http://api.valky.eu/log/?ulozto_search="+escape(url));
+}
+
 function getDownloadLink(lnk, captcha, handler)
 {
   if ( lnk == lastRequest )
@@ -33,14 +58,33 @@ function getDownloadLink(lnk, captcha, handler)
 
   myRequest(mainurl, function(body) {
     body = body.split("\r").join("").split("\n").join("#");
-            
-    keepCookie  = body.match("(ULOSESSID=.*?);")[1];
-    keepCookie += "; "+body.match("(uloztoid=.*?);")[1];
+ 
+    var cookieSession = myMatch(body, "(ULOSESSID=.*?);");
+
+    if ( cookieSession )
+      keepCookie  = cookieSession;
+    else
+      _ASSERT(0, "cannot determine session id!");
+
+    var cookieId = myMatch(body, "(uloztoid=.*?);");
+
+    if ( cookieId )
+      keepCookie += "; " + cookieId;
+    else
+      _ASSERT(0, "cannot determine file id!");
+
     //keepCookie += "; maturity=adult";
             
-    var newLocation = body.match("#Location: (.*?)#");
-    mainurl = newLocation[1];
-    doMainRequest(doCaptcha);
+    var newLocation = myMatch(body, "#Location: (.*?)#");
+    if (newLocation) 
+    {
+      mainurl = newLocation;
+      doMainRequest(doCaptcha);
+      addFavourite(mainurl);
+    } else
+    {
+      _ASSERT(0, "incorrect server response, could not identify redirection address, URL not valid anymore");
+    }
   });
 }
 
@@ -114,27 +158,21 @@ function doMainRequest(onFinish)
 {
   var getvar = function (html, key)
   {
-    var regex = "name=\""+key+"\".*?value=\"(.*?)\"";
-    var result = html.match(regex);
-    if (result && result.length > 1)
-      return result[1] + "";
-    else
-      console.log("ERROR: Cannot find form field '"+key+"'!");
-    return "?";
+    var result = myMatch(html, "name=\""+key+"\".*?value=\"(.*?)\"");
+    _ASSERT(result, "ERROR: Cannot find form field '"+key+"'!");
+    return result;
   }
 
   myRequest(mainurl, function(body) {
     body = body.split("\r").join("").split("\n").join("");
             
     var formId = "frm-download-freeDownloadTab-freeDownloadForm";
-    var formhtmlMatch = body.match("id=\""+formId+"\"(.*)</form>");
-    if ( !formhtmlMatch || formhtmlMatch.length != 2 )
+    var formhtml= myMatch(body, "id=\""+formId+"\"(.*)</form>");
+    if ( !formhtml)
     {
-      console.log("ERROR: FORM DATA not found: <<<"+body+">>>");
+      _ASSERT(0, "ERROR: FORM DATA not found: body='"+body+"'");
       return;
     }
-
-    var formhtml = formhtmlMatch[1];
 
     form._token_ = getvar(formhtml, "_token_");
     form.ts = getvar(formhtml, "ts");
@@ -229,18 +267,10 @@ function getSearchResults(term, onResponse)
       str = str.substr(0, str.length-1);
     return new Buffer(str, "binary").toString("utf8");
   }
-
-  var safematch = function(item, regexp)
-  {
-    var m = item.match(regexp);
-    if ( m && m.length == 2 )
-      return m[1];
-    return "";
-  }
-    
+  
   var decode = function(data, key)
   {
-  	var decoder = new decoderClass(key);
+    var decoder = new decoderClass(key);
     var result = [];
     var first = true;
       
@@ -249,20 +279,20 @@ function getSearchResults(term, onResponse)
       var item = trim(decoder.decrypt(data[i])).split("\n").join("");
       item = item.split("\t").join("");
      
-      // last item is corrupted, first is always mtbr.abi
+      // last item is corrupted, first is always mtbr.avi
       if ( item.indexOf("title") == -1 || first )
       {
         first = false;
         continue;
       }
 
-      var url = safematch(item, "class=\"name\".*?href=\"(.*?)\"");
-      var img = "<img src=\"https:" + safematch(item, "class=\"img.*?src=\"(.*?)\"") + "\">";
-      var rating = safematch(item, "<abbr title=\"Hodno.*?\">(.*?)</abbr>");
-      var name = safematch(item, "title=\"(.*?)\"");
-      var size = safematch(item, "<span>Velikost</span>(.*?)</li>");
-      var time = safematch(item, "<span>.?as</span>(.*?)</li>");
-      var type = safematch(item, "<span class=\"type\">(.*?)</span>");
+      var url = myMatch(item, "class=\"name\".*?href=\"(.*?)\"") || "";
+      var img = "<img src=\"https:" + myMatch(item, "class=\"img.*?src=\"(.*?)\"") + "\">";
+      var rating = myMatch(item, "<abbr title=\"Hodno.*?\">(.*?)</abbr>") || "";
+      var name = myMatch(item, "title=\"(.*?)\"") || "";
+      var size = myMatch(item, "<span>Velikost</span>(.*?)</li>") || "";
+      var time = myMatch(item, "<span>.?as</span>(.*?)</li>") || "";
+      var type = myMatch(item, "<span class=\"type\">(.*?)</span>") || "";
         
       // skip locked files
       if ( img.indexOf("/lock.") != -1 )
@@ -280,16 +310,14 @@ function getSearchResults(term, onResponse)
     }, function(error, response, body)
     {
       body = body.split("\n").join("").split("\\").join("");
-      var dataraw = body.match("var kn = (\\{.*?\\})");
-      if ( !dataraw || dataraw.length != 1)
-        console.log("Failed to parse json response (contents)");
+      var dataraw = myMatch(body, "var kn = (\\{.*?\\})");
+      _ASSERT(dataraw, "Failed to parse json response (contents)");
+                                                        	
+      var data = JSON.parse(dataraw);
+      var keyraw = myMatch(body, "kn\\[\"(.*?)\"\\]");
+      _ASSERT(keyraw, "Failed to parse json response (key)");
           
-      var data = JSON.parse(dataraw[1]);
-      var keyraw = body.match("kn\\[\"(.*?)\"\\]");
-      if ( !keyraw || keyraw.length != 1)
-        console.log("Failed to parse json response (key)");
-          
-      var key = keyraw[1];
+      var key = keyraw;
       var result = decode(data, data[key]);
           
       onResponse(result);
