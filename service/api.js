@@ -38,8 +38,8 @@ function myMatch(string, regexp)
 
 function addFavourite(url)
 {
-  // call http://api.valky.eu/log/?get to get list of recent downloads
-  request("http://api.valky.eu/log/?ulozto_search="+escape(url));
+  var community = require('./community.js');
+  community.add(url);
 }
 
 function getDownloadLink(lnk, captcha, handler)
@@ -58,7 +58,7 @@ function getDownloadLink(lnk, captcha, handler)
 
   myRequest(mainurl, function(body) {
     body = body.split("\r").join("").split("\n").join("#");
- 
+
     var cookieSession = myMatch(body, "(ULOSESSID=.*?);");
 
     if ( cookieSession )
@@ -112,7 +112,8 @@ function mySpawn(command, args, handler)
     console.log('stderr: ' + data);
   });
 
-  proc.on('close', function(code) {
+  proc.on('close', function(code) {    
+    _ASSERT(response != "", "curl invalid response: '"+cmdline+"' probably https protocol not supported?");
     handler(response);
   });
 
@@ -259,7 +260,7 @@ var decoderClass = require('./blowfish.js').blowfish;
 
 function getSearchResults(term, onResponse)
 {
-  var searchUrl = "https://ulozto.cz/hledej?q=" + escape(term);
+  var searchUrl = "https://ulozto.cz/hledej?password=unsecured&q=" + escape(term);
 
   var trim = function (str)
   {

@@ -1,8 +1,10 @@
 <?php
 class SynoDLMSearchUlozto
 {
-  private $searchUrl = "http://ulozto.cz/hledej?q=";
+  private $searchUrl = "http://ulozto.cz/hledej?password=unsecured&q=";
+  private $communityUrl = "http://api.gabo.guru/ulozto/";
   private $blowfish;
+  private $community;
 
   public function __construct() 
   {
@@ -17,7 +19,13 @@ class SynoDLMSearchUlozto
       "X-Requested-With: XMLHttpRequest"
     );  
     curl_setopt($curl, CURLOPT_HTTPHEADER, $headers); 
-    curl_setopt($curl, CURLOPT_URL, $this->searchUrl.urlencode($query));
+    if ($query == "top")
+    {
+      $this->community = true;
+      curl_setopt($curl, CURLOPT_URL, $this->communityUrl);
+    }
+    else
+      curl_setopt($curl, CURLOPT_URL, $this->searchUrl.urlencode($query));
     curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($curl, CURLOPT_SSL_VERIFYHOST, false);
     curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, false);                
@@ -25,6 +33,11 @@ class SynoDLMSearchUlozto
 
   public function parse($plugin, $response) 
   {
+    if ($this->community)
+    {
+      return $this->parseCommunity($plugin, $response);
+    }
+
     $response = str_replace("\n", "", $response);
     $response = str_replace("\\", "", $response);
       
@@ -63,6 +76,31 @@ class SynoDLMSearchUlozto
     }
 
     return $entries;
+  }
+
+  public function parseCommunity($plugin, $response) 
+  {
+    $lines = explode("\n", $response);
+    foreach ($lines as $line)
+    {
+      $json = self::match($line, "\"args\":({.*?})");
+      $element = json_decode($json, true);
+
+      if ($element == null)
+        continue;
+
+      if (!isset($element["url"]))
+        continue;
+
+      $name = $element["csfdTitle"];
+      $download = $element["url"];
+      $year = $element["release"];
+      $seeds = $element["csfdRating"];
+      $leechs = $element["imdbRating"];
+      $about = $element["csfdUrl"];
+
+      $plugin->addResult($name, $download, 0, $year."-04-01", $about, "", $seeds, $leechs, "Video");
+    } 
   }
  
   private function match($txt, $regex)
