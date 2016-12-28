@@ -79,6 +79,8 @@ function getDownload(lnk)
 {
   lnk = lnk.replace("http://ulozto.cz", "");
   lnk = lnk.replace("http://ulozto.sk", "");
+  lnk = lnk.replace("https://ulozto.cz", "");
+  lnk = lnk.replace("https://ulozto.sk", "");
 
   var safeResponse = currentResponse;
   api.getDownloadLink(lnk, captchaHelper, function(url)

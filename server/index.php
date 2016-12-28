@@ -15,9 +15,18 @@
 
     class Plugin
     {
+      public function __construct() 
+      {
+        echo "<table border=1><thead><td>title</td><td>download</td><td>size</td><td>date</td><td>page</td><td>hash</td><td>leechs</td><td>seeds</td><td>cat</td></thead>";
+      }
+      public function __destruct() 
+      {
+        echo "</table>";
+      }
+
       public function addResult($title, $download, $size, $datetime, $page, $hash, $seeds, $leechs, $category)
       {
-        echo "Adding: title=".$title. " download=".$download." size=".$size." date=".$datetime." page=".$page." hash=".$hash." leechs=".$leechs." seeds=".$seeds." cat=".$category."<br>";
+        echo "<tr><td>".$title."</td><td>".$download."</td><td>".$size."</td><td>".$datetime."</td><td>".$page."</td><td>".$hash."</td><td>".$leechs."</td><td>".$seeds."</td><td>".$category."</td></tr>";
       }
     };
 
@@ -29,10 +38,10 @@
     $t->prepare($curl, "top");
 
     $response = curl_exec($curl);
-    echo("result:".$t->parse($plugin, $response));
+    $t->parse($plugin, $response);
     $status = curl_getinfo($curl,CURLINFO_HTTP_CODE); 
-    echo(" status: ".$status);
     curl_close($curl); 
+    unset($plugin);
 
     die();
   }
@@ -61,6 +70,19 @@
     return $aux;
   }
 
+  function getCurrent()
+  {
+    return date("Y-m-d").".txt";
+  }
+  function getLast($days)
+  {
+    return date("Y-m-d", strtotime($days." days")).".txt";
+  }
+  function getTs()
+  {
+    return date("Y-m-d H:i:s");
+  }
+  
   $args = "";
   $keywords = array("url", "release", "csfdRating", "csfdTitle", "imdbRating", "imdbTitle", "imdbUrl", "csfdUrl");
   foreach ($keywords as $keyword)
@@ -77,19 +99,4 @@
   $f = fopen("data/".getCurrent(), "a");
   fwrite($f, $record);
   fclose($f);
-
-  die();
-
-  function getCurrent()
-  {
-    return date("Y-m-d").".txt";
-  }
-  function getLast($days)
-  {
-    return date("Y-m-d", strtotime($days." days")).".txt";
-  }
-  function getTs()
-  {
-    return date("Y-m-d H:i:s");
-  }
 ?>

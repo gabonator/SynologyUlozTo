@@ -80,7 +80,8 @@ class SynoDLMSearchUlozto
 
   public function parseCommunity($plugin, $response) 
   {
-    $lines = explode("\n", $response);
+    $lines = explode("\r", implode("\r", explode("\n", $response)));
+
     foreach ($lines as $line)
     {
       $json = self::match($line, "\"args\":({.*?})");
@@ -99,7 +100,12 @@ class SynoDLMSearchUlozto
       $leechs = $element["imdbRating"];
       $about = $element["csfdUrl"];
 
-      $plugin->addResult($name, $download, 0, $year."-04-01", $about, "", $seeds, $leechs, "Video");
+      if (!isset($year) || $year == "")
+        $year = date("Y");
+
+      $hash = md5($download);
+
+      $plugin->addResult($name, $download, 0, $year."-04-01", $about, $hash, $seeds, $leechs, "Video");
     } 
   }
  

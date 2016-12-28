@@ -74,7 +74,15 @@ function getDownloadLink(lnk, captcha, handler)
       _ASSERT(0, "cannot determine file id!");
 
     //keepCookie += "; maturity=adult";
-            
+     
+    var formId = "frm-download-freeDownloadTab-freeDownloadForm";
+  
+    if (body.indexOf(formId) != -1)
+    {
+      processMainRequest(body, doCaptcha);
+      return;
+    }
+
     var newLocation = myMatch(body, "#Location: (.*?)#");
     if (newLocation) 
     {
@@ -157,6 +165,13 @@ function myRequest(url, handler, data)
 
 function doMainRequest(onFinish)
 {
+  myRequest(mainurl, function(body) {
+    processMainRequest(body, onFinish);
+  })
+}
+
+function processMainRequest(body, onFinish)
+{
   var getvar = function (html, key)
   {
     var result = myMatch(html, "name=\""+key+"\".*?value=\"(.*?)\"");
@@ -164,28 +179,26 @@ function doMainRequest(onFinish)
     return result;
   }
 
-  myRequest(mainurl, function(body) {
-    body = body.split("\r").join("").split("\n").join("");
-            
-    var formId = "frm-download-freeDownloadTab-freeDownloadForm";
-    var formhtml= myMatch(body, "id=\""+formId+"\"(.*)</form>");
-    if ( !formhtml)
-    {
-      _ASSERT(0, "ERROR: FORM DATA not found: body='"+body+"'");
-      return;
-    }
+  body = body.split("\r").join("").split("\n").join("");
+          
+  var formId = "frm-download-freeDownloadTab-freeDownloadForm";
+  var formhtml= myMatch(body, "id=\""+formId+"\"(.*)</form>");
+  if ( !formhtml)
+  {
+    _ASSERT(0, "ERROR: FORM DATA not found: body='"+body+"'");
+    return;
+  }
 
-    form._token_ = getvar(formhtml, "_token_");
-    form.ts = getvar(formhtml, "ts");
-    form.cid = getvar(formhtml, "cid");
-    form.adi = getvar(formhtml, "adi"); // ="f" for reloaded captcha
-    form.sign_a = getvar(formhtml, "sign_a");
-    form.sign = getvar(formhtml, "sign");
-    form.captcha_type = "xapca";
-    form._do = "download-freeDownloadTab-freeDownloadForm-submit";            
+  form._token_ = getvar(formhtml, "_token_");
+  form.ts = getvar(formhtml, "ts");
+  form.cid = getvar(formhtml, "cid");
+  form.adi = getvar(formhtml, "adi"); // ="f" for reloaded captcha
+  form.sign_a = getvar(formhtml, "sign_a");
+  form.sign = getvar(formhtml, "sign");
+  form.captcha_type = "xapca";
+  form._do = "download-freeDownloadTab-freeDownloadForm-submit";            
 
-    onFinish();
-  })
+  onFinish();
 }
 
 function doCaptcha()

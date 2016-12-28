@@ -9,7 +9,7 @@ function myLog(msg)
 {
   if (verbose)
   {
-    console.log(msg);
+    console.log("COMMUNITY-"+msg);
   }
 }
 
@@ -75,15 +75,17 @@ function titleByUrl(url)
     return tokens.join(" ");
 }
 
-function googleSearch(query, handler)
+function googleSearch(query, filter, handler)
 {
     var req = "http://www.google.com/search?hl=en&q="+escape(query)+"&start=0&sa=N&num=20&ie=UTF-8&oe=UTF-8&gws_rd=ssl";
+    myLog("GOOGLE search: '"+req+"'");
+
     request(req,
         function (error, response, body)
         {
             if ( body &&body.indexOf("CAPTCHA") != -1)
             {
-                console.log("Search blocked: " + req);
+                console.log("GOOGLE Search blocked");
                 handler();
                 return;
             }
@@ -104,13 +106,15 @@ function googleSearch(query, handler)
                     if (end1 != -1 && current-end1 < 100)
                     {
                         var url = body.substr(current, end1-current);
-                        response.push(url);
+                        myLog("GOOGLE entry: '"+url+"'");
+                        response.push("http://"+url);
                     }
                     offset = current + 1;
                 }
                 handler(response);
                 return;
             }
+            myLog("GOOGLE error '"+error+"'");
             handler();
         });
 };
@@ -118,6 +122,8 @@ function googleSearch(query, handler)
 function bingSearch(query, filter, handler)
 {
     var req = "http://www.bing.com/search?q="+escape(query);
+    myLog("BING search: '"+req+"'");
+
     request(req,
         function (error, response, body)
         {
@@ -134,13 +140,17 @@ function bingSearch(query, filter, handler)
                     if (end != -1 && current-end < 100)
                     {
                         var url = body.substr(current, end-current);
+                        myLog("BING entry: '"+url+"'");
+ 
                         response.push("http://"+url);
                     }
                     offset = current + 1;
                 }
+
                 handler(response);
                 return;
             }
+            myLog("BING error '"+error+"'");
             handler();
         });
 }
@@ -358,8 +368,16 @@ function toUrl(json)
   return q;
 }
 
-//doSearch = googleSearch;
-doSearch = bingSearch;
+function doSearch(query, filter, handler)
+{
+  bingSearch(query, filter, function(response)
+  {
+    if (response && response.length > 0)
+      handler(response);
+    else
+      googleSearch(query, filter, handler);
+  });
+}
 
 function addMovie(url)
 {
