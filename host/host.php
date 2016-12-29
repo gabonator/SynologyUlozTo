@@ -36,10 +36,6 @@ class SynoDLMHostUlozto
                 $queryUrl = "http://localhost:8034/?getDownload('".urlencode($url)."')";
 
                 $curl = curl_init();
-//                curl_setopt($curl, CURLOPT_SSL_VERIFYPEER, FALSE);
-//                curl_setopt($curl, CURLOPT_USERAGENT, DOWNLOAD_STATION_USER_AGENT);
-//                curl_setopt($curl, CURLOPT_POST, TRUE);
-//                curl_setopt($curl, CURLOPT_HEADER, TRUE);
                 curl_setopt($curl, CURLOPT_RETURNTRANSFER, TRUE);
                 curl_setopt($curl, CURLOPT_URL, $queryUrl);
 

@@ -93,19 +93,30 @@ class SynoDLMSearchUlozto
       if (!isset($element["url"]))
         continue;
 
+      $rawTitle = $element["rawTitle"];
       $name = $element["csfdTitle"];
       $download = $element["url"];
       $year = $element["release"];
       $seeds = $element["csfdRating"];
       $leechs = $element["imdbRating"];
       $about = $element["csfdUrl"];
+      $hash = md5($download);
 
       if (!isset($year) || $year == "")
         $year = date("Y");
 
-      $hash = md5($download);
+      if (!isset($name) || $name == "")
+        $name = $rawTitle;
 
-      $plugin->addResult($name, $download, 0, $year."-04-01", $about, $hash, $seeds, $leechs, "Video");
+      if (!isset($name) || $name == "")
+        $name = str_replace("-", " ", basename($download));
+
+      if (!isset($about) || $about == "")
+        $about = $download;
+
+      $type = $seeds > 0 ? "Video" : "";
+
+      $plugin->addResult($name, $download, 0, $year."-04-01", $about, $hash, $seeds, $leechs, $type);
     } 
   }
  

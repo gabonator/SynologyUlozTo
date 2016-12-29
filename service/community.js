@@ -25,7 +25,7 @@ function titleByUrl(url)
 {
     var extensions = ["iso"];
     var stopper = ["dabing", "dub", "cz", "sk", "3d", "hdtv", "1080i", "1080p", "webrip",
-                   "rar", "mkv", "avi", "mp4", "iso", "zip"]
+                   "rar", "mkv", "avi", "mp4", "iso", "zip", "dvd", "rip", "h264"]
     
     var title = url;
     var file = title.substr(title.lastIndexOf("/")+1);
@@ -282,7 +282,7 @@ function process(url, handler)
     myLog("URL Request: "+url);
 
     var title = titleByUrl(url);
-    var response = {url:url};
+    var response = {url:url, rawTitle:title};
 
     myLog("Title: "+title);
 

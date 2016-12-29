@@ -1,6 +1,7 @@
 "use strict";
 process.title = 'Ulozto.cz interface';
 
+
 // Web server ==============================================================
 var request = require("request");
 var http = require('http');
@@ -15,6 +16,20 @@ console.log("Ulozto.cz interface webserver running at localhost:" + port);
 var currentResponse;
 
 http.createServer(function (request, response) {
+
+  // CORS
+  response.setHeader('Access-Control-Allow-Origin', request.headers.origin);
+  response.setHeader('Access-Control-Request-Method', 'GET');
+  response.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+  response.setHeader('Access-Control-Allow-Headers', 'authorization, content-type');
+
+  if ( request.method === 'OPTIONS' ) 
+  {
+    response.writeHead(200);
+    response.end();
+    return;
+  }
+
   var parsedUrl = url.parse(request.url);
   var uri = parsedUrl.pathname;
   var query = parsedUrl.query;

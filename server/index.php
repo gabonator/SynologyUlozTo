@@ -17,7 +17,7 @@
     {
       public function __construct() 
       {
-        echo "<table border=1><thead><td>title</td><td>download</td><td>size</td><td>date</td><td>page</td><td>hash</td><td>leechs</td><td>seeds</td><td>cat</td></thead>";
+        echo "<table border=1><thead><td>title</td><td>download</td><td>size</td><td>date</td><td>page</td><td>leechs</td><td>seeds</td><td>cat</td></thead>";
       }
       public function __destruct() 
       {
@@ -26,7 +26,7 @@
 
       public function addResult($title, $download, $size, $datetime, $page, $hash, $seeds, $leechs, $category)
       {
-        echo "<tr><td>".$title."</td><td>".$download."</td><td>".$size."</td><td>".$datetime."</td><td>".$page."</td><td>".$hash."</td><td>".$leechs."</td><td>".$seeds."</td><td>".$category."</td></tr>";
+        echo "<tr><td>".$title."</td><td>".$download."</td><td>".$size."</td><td>".$datetime."</td><td>".$page."</td><td>".$leechs."</td><td>".$seeds."</td><td>".$category."</td></tr>";
       }
     };
 
@@ -84,7 +84,7 @@
   }
   
   $args = "";
-  $keywords = array("url", "release", "csfdRating", "csfdTitle", "imdbRating", "imdbTitle", "imdbUrl", "csfdUrl");
+  $keywords = array("url", "release", "csfdRating", "csfdTitle", "imdbRating", "imdbTitle", "imdbUrl", "csfdUrl", "rawTitle");
   foreach ($keywords as $keyword)
   {
     if (isset($_GET[$keyword]))
