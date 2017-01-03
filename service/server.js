@@ -17,7 +17,7 @@ var currentResponse;
 
 http.createServer(function (request, response) {
 
-  if (request.headers.origin != "")
+  if (0 && milesrequest.headers.origin != "")
   {
     // CORS
     response.setHeader('Access-Control-Allow-Origin', request.headers.origin);
