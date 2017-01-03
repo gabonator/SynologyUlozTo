@@ -17,12 +17,15 @@ var currentResponse;
 
 http.createServer(function (request, response) {
 
-  // CORS
-  response.setHeader('Access-Control-Allow-Origin', request.headers.origin);
-  response.setHeader('Access-Control-Request-Method', 'GET');
-  response.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
-  response.setHeader('Access-Control-Allow-Headers', 'authorization, content-type');
-
+  if (request.headers.origin != "")
+  {
+    // CORS
+    response.setHeader('Access-Control-Allow-Origin', request.headers.origin);
+    response.setHeader('Access-Control-Request-Method', 'GET');
+    response.setHeader('Access-Control-Allow-Methods', 'OPTIONS, GET');
+    response.setHeader('Access-Control-Allow-Headers', 'authorization, content-type');
+  }
+                  
   if ( request.method === 'OPTIONS' ) 
   {
     response.writeHead(200);
