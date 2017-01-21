@@ -13,7 +13,7 @@
 
 </head>
 <body>
-    <!--nefunguje diakritika, 5 hviezdiciek sa nezmesti-->
+    <!--nefunguje diakritika, zobrazenie screenshotov, eval safe-->
     <div class="container" style="margin-top: 5%;">
         <div class="col-md-6 col-md-offset-3">
             
@@ -22,12 +22,12 @@
                 
                 <!-- Search Field -->
                 <div class="row">
-                    <h1 class="text-center">Hladaj na ulozto...</h1>
+                    <h1 class="text-center">Hľadaj bársčo...</h1>
                     <div class="form-group">
                         <div class="input-group">
-                            <input id="searchinput" class="form-control" autocomplete="off" type="text" name="search" placeholder="Nazov filmu..." required/>
+                            <input id="searchinput" class="form-control" autocomplete="off" type="text" name="search" placeholder="Názov filmu... (napr rozpravka 2016)" required/>
                             <span class="input-group-btn">
-                                <button class="btn btn-success" type="submit"><span class="glyphicon glyphicon-search" aria-hidden="true"><span style="margin-left:10px;">Search</span></button>
+                                <button class="btn btn-success" type="submit"><span class="glyphicon glyphicon-search" aria-hidden="true"><span style="margin-left:10px;">Hľadaj</span></button>
                             </span>
                             </span>
                         </div>
@@ -41,22 +41,22 @@
     </div>
     
     <div id="loadingContainer" class="text-center" style="display:none;">
-        <button class="btn btn-default btn-lg"><i class="fa fa-refresh fa-spin"></i> Hladam...</button>
+        <button class="btn btn-default btn-lg"><i class="fa fa-refresh fa-spin"></i> Hľadám...</button>
     </div>
 
     <div id="resultsContainer" class="container" style="display:none;">
         <div class="row">
             <section class="content">
-                <h1>Vysledky hladania</h1>
+                <h1>Výsledky hľadania</h1>
                 <div class="col-md-8 col-md-offset-2">
                     <div class="panel panel-default">
                         <div class="panel-body">
                             <div class="pull-right">
                                 <div class="btn-group">
                                     <button type="button" class="btn btn-success btn-filter" data-target="Video">Filmy</button>
-                                    <button type="button" class="btn btn-warning btn-filter" data-target="Audio">Pesnicky</button>
+                                    <button type="button" class="btn btn-warning btn-filter" data-target="Audio">Pesničky</button>
                                     <button type="button" class="btn btn-danger btn-filter" data-target="Document">Dokumenty</button>
-                                    <button type="button" class="btn btn-default btn-filter" data-target="all">Vsetko</button>
+                                    <button type="button" class="btn btn-default btn-filter" data-target="all">Všetko</button>
                                 </div>
                             </div>
                             <div class="table-container">
@@ -67,6 +67,14 @@
                             </div>
                         </div>
                     </div>
+                    
+                    <div class="content-footer">
+                        <p>
+                        gabo.guru - 2017<br>
+                        Read about <a href="https://github.com/gabonator/Work-in-progress/tree/master/SynologySearchEngine/UlozToCz" target="_blank">the technology behind</a>
+                        </p>
+                    </div>
+                    
                 </div>
             </section>
             
@@ -79,6 +87,11 @@
 <script>
     var server = "";
     
+    String.prototype.replaceAll = function(search, replacement) {
+        var target = this;
+        return target.split(search).join(replacement);
+    };
+
     $(document).ready(function () {
         $('.star').on('click', function () {
             $(this).toggleClass('star-checked');
@@ -101,7 +114,7 @@
         $("#searchinput").autocomplete({
             source: function(request, response) {
                 $.ajax({
-                    url: server+"?getSuggestion('"+escape(request.term)+"')",
+                    url: server+"?getSuggestion('"+escape(request.term.replaceAll("'", ""))+"')",
                     dataType: "json",
                     success: response
                 });
@@ -136,6 +149,10 @@ function processSearch(json)
 {
     // http://bootsnipp.com/snippets/featured/easy-table-filter
     var q = "";
+    json.sort(function(a, b) {
+        return parseFloat(b.rating) - parseFloat(a.rating);
+    });
+    
     for (var i in json)
     {
         var itype = (json[i].type == "Video" || json[i].type == "Audio" ) ? json[i].type : "Document";
@@ -158,7 +175,7 @@ function processSearch(json)
         q += "    <div class=\"media-body\">";
         q += "      <span class=\"media-meta pull-right\"><b>" + json[i].size + "</b><br>" + json[i].time + "</span>";
         q += "      <h4 class=\"title\">";
-        q += "        " + json[i].name;
+        q += "        " + json[i].name.replaceAll("-", " ").replaceAll("_", " ").replaceAll(".", " ");
 
         q += "        <span class=\"pull-right "+itype+"\">("+json[i].type+")</span>";
         q += "        </h4>";

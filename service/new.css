@@ -8,7 +8,7 @@ body {
 .content h1 {
     text-align: center;
 }
-/*
+
 .content .content-footer p {
     color: #6d6d6d;
     font-size: 12px;
@@ -18,7 +18,6 @@ body {
     color: inherit;
     font-weight: bold;
 }
-*/
 
 /*	--------------------------------------------------
 	:: Table Filter
@@ -50,63 +49,17 @@ body {
     background-color: #eee;
 }
 .table-filter tr td:first-child {
-    width: 90px;
+    width: 40px;
     text-align: center;
 }
-/*
-.table-filter tr td:nth-child(2) {
-    width: 35px;
-}*/
-/*
-.ckbox {
-    position: relative;
-}
-.ckbox input[type="checkbox"] {
-    opacity: 0;
-}
-.ckbox label {
-    -webkit-user-select: none;
-    -moz-user-select: none;
-    -ms-user-select: none;
-    user-select: none;
-}
-.ckbox label:before {
-    content: '';
-    top: 1px;
-    left: 0;
-    width: 18px;
-    height: 18px;
-    display: block;
-    position: absolute;
-    border-radius: 2px;
-    border: 1px solid #bbb;
-    background-color: #fff;
-}
-.ckbox input[type="checkbox"]:checked + label:before {
-    border-color: #2BBCDE;
-    background-color: #2BBCDE;
-}
-.ckbox input[type="checkbox"]:checked + label:after {
-    top: 3px;
-    left: 3.5px;
-    content: '\e013';
-    color: #fff;
-    font-size: 11px;
-    font-family: 'Glyphicons Halflings';
-    position: absolute;
-}
- */
 .table-filter .star {
     color: #F0AD4E;
     text-align: center;
-   /* display: block;*/
 }
 .table-filter .badstar {
     color: #808080;
     text-align: center;
-    /* display: block;*/
 }
-
 .table-filter .media-photo {
     width: 120px;
 }
