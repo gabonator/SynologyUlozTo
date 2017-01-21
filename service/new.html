@@ -1,0 +1,209 @@
+<html>
+<head>
+<title>ulozto.cz fast downloader</title>
+<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+        <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+            <link href="new.css" rel="stylesheet">
+            <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+            <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+            <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+            <link href="http://jquery-ui-bootstrap.github.io/jquery-ui-bootstrap/css/custom-theme/jquery-ui-1.10.3.custom.css" rel="stylesheet"/>
+            <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+
+</head>
+<body>
+    <!--nefunguje diakritika, 5 hviezdiciek sa nezmesti-->
+    <div class="container" style="margin-top: 5%;">
+        <div class="col-md-6 col-md-offset-3">
+            
+            <!-- Search Form -->
+            <form id="searchform" role="form">
+                
+                <!-- Search Field -->
+                <div class="row">
+                    <h1 class="text-center">Hladaj na ulozto...</h1>
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input id="searchinput" class="form-control" autocomplete="off" type="text" name="search" placeholder="Nazov filmu..." required/>
+                            <span class="input-group-btn">
+                                <button class="btn btn-success" type="submit"><span class="glyphicon glyphicon-search" aria-hidden="true"><span style="margin-left:10px;">Search</span></button>
+                            </span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+            </form>
+            <!-- End of Search Form -->
+            
+        </div>
+    </div>
+    
+    <div id="loadingContainer" class="text-center" style="display:none;">
+        <button class="btn btn-default btn-lg"><i class="fa fa-refresh fa-spin"></i> Hladam...</button>
+    </div>
+
+    <div id="resultsContainer" class="container" style="display:none;">
+        <div class="row">
+            <section class="content">
+                <h1>Vysledky hladania</h1>
+                <div class="col-md-8 col-md-offset-2">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <div class="pull-right">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-success btn-filter" data-target="Video">Filmy</button>
+                                    <button type="button" class="btn btn-warning btn-filter" data-target="Audio">Pesnicky</button>
+                                    <button type="button" class="btn btn-danger btn-filter" data-target="Document">Dokumenty</button>
+                                    <button type="button" class="btn btn-default btn-filter" data-target="all">Vsetko</button>
+                                </div>
+                            </div>
+                            <div class="table-container">
+                                <table class="table table-filter">
+                                    <tbody id="resultTable">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            
+        </div>
+    </div>
+    
+    
+</body>
+
+<script>
+    var server = "";
+    
+    $(document).ready(function () {
+        $('.star').on('click', function () {
+            $(this).toggleClass('star-checked');
+        });
+
+        $('.ckbox label').on('click', function () {
+            $(this).parents('tr').toggleClass('selected');
+        });
+
+        $('.btn-filter').on('click', function () {
+            var $target = $(this).data('target');
+            if ($target != 'all') {
+                $('.table tr').css('display', 'none');
+                $('.table tr[data-status="' + $target + '"]').fadeIn('slow');
+            } else {
+                $('.table tr').css('display', 'none').fadeIn('slow');
+            }
+        });
+        
+        $("#searchinput").autocomplete({
+            source: function(request, response) {
+                $.ajax({
+                    url: server+"?getSuggestion('"+escape(request.term)+"')",
+                    dataType: "json",
+                    success: response
+                });
+            },
+            autoFocus: true,
+            select: function(event, ui)
+            {
+                $("#searchinput").val(ui.item.value);
+                $("#searchform").submit();
+            }
+            //min_length: 3,
+            //delay: 300
+        });
+                      
+        $('#searchform').submit(function() {
+            $("#loadingContainer").show();
+            $("#resultsContainer").hide();
+                                
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.open("GET", server+"?doSearch('"+escape($("#searchinput").val())+"')");
+            xmlHttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            xmlHttp.addEventListener("load", function()
+             {
+                 processSearch(JSON.parse(this.responseText));
+             });
+            xmlHttp.send();
+            return false;
+        });
+    });
+ 
+function processSearch(json)
+{
+    // http://bootsnipp.com/snippets/featured/easy-table-filter
+    var q = "";
+    for (var i in json)
+    {
+        var itype = (json[i].type == "Video" || json[i].type == "Audio" ) ? json[i].type : "Document";
+
+        q += "<tr data-status=\"" + itype + "\">";
+        q += "<td>";
+        
+        for ( var j=0; j < Math.min(json[i].rating, 5); j++)
+            q += "<i class=\"glyphicon glyphicon-star star\"></i>";
+            
+        for ( var j=0; j < Math.min(-json[i].rating, 5); j++)
+            q += "<i class=\"glyphicon glyphicon-remove badstar\"></i>";
+            
+        q += "</td>";
+        q += "<td>";
+        q += "  <div class=\"media\">";
+        q += "    <a href=\"#\" class=\"pull-left\">";
+        q += "      <img src=\""+json[i].imgurl+"\" class=\"media-photo\">";
+        q += "    </a>";
+        q += "    <div class=\"media-body\">";
+        q += "      <span class=\"media-meta pull-right\"><b>" + json[i].size + "</b><br>" + json[i].time + "</span>";
+        q += "      <h4 class=\"title\">";
+        q += "        " + json[i].name;
+
+        q += "        <span class=\"pull-right "+itype+"\">("+json[i].type+")</span>";
+        q += "        </h4>";
+        q += "        <p class=\"summary\">";
+        q += "        <input type=\"button\" value=\"Download\" onClick=\"requestDownload('"+json[i].url+"')\">";
+        q += "        <input type=\"button\" value=\"GetUrl\" onClick=\"requestDownload('"+json[i].url+"', processUrl)\">";
+        q += "        <input type=\"button\" value=\"Play in VLC\" onClick=\"requestDownload('"+json[i].url+"', processVlc)\">";
+        q +=          "</p>";
+        q += "    </div>";
+        q += "  </div>";
+        q += "</td></tr>";
+    }
+    $("#resultTable").html(q);
+    $("#resultsContainer").show();
+    $("#loadingContainer").hide();
+}
+
+function requestDownload(lnk, process)
+{
+  process = process || processDownload;
+
+  var xmlHttp = new XMLHttpRequest();
+  xmlHttp.open("GET", server+"?getLink('"+lnk+"')");
+  xmlHttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+  xmlHttp.addEventListener("load", function()
+  {
+    process(JSON.parse(this.responseText));
+  });
+  xmlHttp.send();
+}
+
+function processVlc(json)
+{
+  document.location.href = server+"?getVlcLink('"+json.url+"')";
+}
+
+function processUrl(json)
+{
+  prompt("Here is your download link:", json.url);
+}
+
+function processDownload(json)
+{
+  document.location.href = json.url;
+}
+
+</script>
+</html>                                            

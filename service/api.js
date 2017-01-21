@@ -163,46 +163,41 @@ UloztoDownloadApi.prototype.getDownloadLink = function(link, handler)
 {
     this.downloadLinkHandler = handler;
     this.currentUrl = "https://ulozto.cz" + link;
-    var _this = this;
     
-    (new Network()).requestUrl(this.currentUrl,
-        function(body, header)
-        {
-            header = header.split("\r").join("").split("\n").join("#");
+    (new Network()).requestUrl(this.currentUrl, this.processDownloadLink.bind(this));
+}
 
-            _this.cookieSession = _this._match(header, "(ULOSESSID=.*?);");
-            _ASSERT(_this.cookieSession, "cannot determine session id!");
+UloztoDownloadApi.prototype.processDownloadLink = function(body, header)
+{
+    header = header.split("\r").join("").split("\n").join("#");
 
-            _this.cookieId = _this._match(header, "(uloztoid=.*?);");
-            _ASSERT(_this.cookieId, "cannot determine file id!");
+    this.cookieSession = this._match(header, "(ULOSESSID=.*?);");
+    _ASSERT(this.cookieSession, "cannot determine session id!");
 
-            if (body.indexOf(_this._formId) != -1)
-            {
-                _this.processRequest(body);
-                return;
-            }
+    this.cookieId = this._match(header, "(uloztoid=.*?);");
+    _ASSERT(this.cookieId, "cannot determine file id!");
 
-            var newLocation = _this._match(header, "#Location: (.*?)#");
-            if (newLocation) 
-            {
-                _this.currentUrl = newLocation;
-                               
-                var network = new Network();
-                network.setCookies(_this._getCookies()); // TODO: necessary?
-                network.requestUrl(_this.currentUrl,
-                    function(body)
-                    {
-                        _this.processRequest(body);
-                    });
-                 
-                _this.addFavourite(_this.currentUrl);
-                return;
-            }
-                               
-            _ASSERT(0, "incorrect server response, could not identify redirection address, URL not valid anymore");
-            _this.downloadLinkHandler();
-        });
-    
+    if (body.indexOf(this._formId) != -1)
+    {
+        this.processRequest(body);
+        return;
+    }
+
+    var newLocation = this._match(header, "#Location: (.*?)#");
+    if (newLocation) 
+    {
+        this.currentUrl = newLocation;
+                       
+        var network = new Network();
+        network.setCookies(this._getCookies());
+        network.requestUrl(this.currentUrl, this.processRequest.bind(this));
+         
+        this.addFavourite(this.currentUrl);
+        return;
+    }
+                       
+    _ASSERT(0, "incorrect server response, could not identify redirection address, URL not valid anymore");
+    this.downloadLinkHandler();
 }
 
 UloztoDownloadApi.prototype._getFormVariable = function(html, key)
@@ -216,7 +211,7 @@ UloztoDownloadApi.prototype.processRequest = function(body)
 {
     body = body.split("\r").join("").split("\n").join("");
                                
-    var formhtml= this._match(body, "id=\""+this._formId+"\"(.*)</form>");
+    var formhtml = this._match(body, "id=\""+this._formId+"\"(.*)</form>");
     if ( !formhtml)
     {
         _ASSERT(0, "ERROR: FORM DATA not found: body='"+body+"'");
@@ -238,48 +233,41 @@ UloztoDownloadApi.prototype.processRequest = function(body)
 
 UloztoDownloadApi.prototype.requestCaptcha = function ()
 {
-    var _this = this;
     var network = new Network();
     network.setCookies(this._getCookies());
     network.setData(this.formData);
     network.requestUrl(this._getCaptchaUrl(),
-        function(body, header)
+        (function(body, header)
         {
             var json = JSON.parse(body);
                        
             _ASSERT(json, "ERROR: invalid captcha json reply");
                        
             var image = json.image;
-            _this.formData.timestamp = json.timestamp;
-            _this.formData.hash = json.hash;
-            _this.formData.salt = json.salt;
-            _this.processCaptcha({image:"http:"+json.image, sound:"http:"+json.sound});
-        });
+            this.formData.timestamp = json.timestamp;
+            this.formData.hash = json.hash;
+            this.formData.salt = json.salt;
+         
+            this.processCaptcha({image:"http:"+json.image, sound:"http:"+json.sound});
+        }).bind(this));
 }
 
 UloztoDownloadApi.prototype.processCaptcha = function (json)
 {
-    var _this = this;
-    
     this.captchaEngine(json,
-        function(code)
+        (function(code)
         {
-            _this.formData.captcha_value = code;
-            _this.requestDownload();
-        });
+            this.formData.captcha_value = code;
+            this.requestDownload();
+        }).bind(this));
 }
 
 UloztoDownloadApi.prototype.requestDownload = function (json)
 {
-    var _this = this;
     var network = new Network();
     network.setCookies(this._getCookies());
     network.setData(this.formData);
-    network.requestUrl(this.currentUrl,
-        function(body, header)
-        {
-            _this.processResponse(body);
-        });
+    network.requestUrl(this.currentUrl, this.processResponse.bind(this));
 }
 
 UloztoDownloadApi.prototype.processResponse = function (body)
@@ -360,13 +348,12 @@ UloztoGeneralApi.prototype.getSearchResults = function(term, handler)
 {
     var searchUrl = this.searchUrl + escape(term);
     var _match = UloztoDownloadApi.prototype._match;
-    var _this = this;
     
     request({
         url: searchUrl,
         method: "GET",
         headers: {"X-Requested-With": "XMLHttpRequest"}
-    }, function(error, response, body)
+    }, (function(error, response, body)
     {
         body = body.split("\n").join("").split("\\").join("");
         var dataraw = _match(body, "var kn = (\\{.*?\\})");
@@ -379,10 +366,10 @@ UloztoGeneralApi.prototype.getSearchResults = function(term, handler)
         _ASSERT(keyraw, "Failed to parse json response (key)");
 
         var key = keyraw;
-        var result = _this._decode(data, data[key]);
+        var result = this._decode(data, data[key]);
 
         handler(result);
-    });
+    }).bind(this));
 }
 
 UloztoGeneralApi.prototype._decode = function(data, key)
@@ -405,20 +392,66 @@ UloztoGeneralApi.prototype._decode = function(data, key)
         }
         
         var url = _match(item, "class=\"name\".*?href=\"(.*?)\"") || "";
-        var img = "<img src=\"https:" + _match(item, "class=\"img.*?src=\"(.*?)\"") + "\">";
+        var imgurl = "https:" + _match(item, "class=\"img.*?src=\"(.*?)\"");
+        var img = "<img src=\"" + imgurl + "\">";
         var rating = _match(item, "<abbr title=\"Hodno.*?\">(.*?)</abbr>") || "";
         var name = _match(item, "title=\"(.*?)\"") || "";
         var size = _match(item, "<span>Velikost</span>(.*?)</li>") || "";
         var time = _match(item, "<span>.?as</span>(.*?)</li>") || "";
-        var type = _match(item, "<span class=\"type\">(.*?)</span>") || "";
+        //var type = _match(item, "<span class=\"type\">(.*?)</span>") || "";
+        var type = this.getTypeBySuffix(name);
         
         // skip locked files
         if ( img.indexOf("/lock.") != -1 )
             continue;
         
-        result.push({url:url, img:img, rating:rating, name:name, size:size, time:time, type:type, data:item});
+        result.push({url:url, img:img, imgurl:imgurl, rating:rating, name:name, size:size, time:time, type:type, data:item});
     }
     return result;
+}
+
+UloztoGeneralApi.prototype.getTypeBySuffix = function(url)
+{
+    var suffixes = {
+        ".torrent"      : "Torrent",
+    
+        ".rar" 			: "Compressed archive",
+        ".zip" 			: "Compressed archive",
+        ".7z" 			: "Compressed archive",
+    
+    
+        ".pdf" 			: "Document",
+        ".txt" 			: "Document",
+    
+        ".srt"			: "Subtitles",
+    
+        ".avi"			: "Video",
+        ".mpg"			: "Video",
+        ".mkv"			: "Video",
+        ".mp4"			: "Video",
+        ".wmv"			: "Video",
+        ".mov"			: "Video",
+        ".vob"			: "Video",
+    
+        ".mp3"			: "Audio",
+        ".flac"			: "Audio",
+        ".wav"			: "Audio",
+    
+        ".gif"			: "Image",
+        ".jpg"			: "Image",
+        ".jpeg"			: "Image",
+    
+        ".apk"			: "Android application",
+    
+        ".iso"			: "ISO Image"};
+    
+    for (var i in suffixes)
+    {
+        if (url.substr(-i.length) == i)
+            return suffixes[i];
+    }
+    
+    return "Unknown";
 }
 
 UloztoGeneralApi.prototype._trim = function (str)
