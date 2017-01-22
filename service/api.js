@@ -68,7 +68,7 @@ Network.prototype.setCookies = function(cookies)
 
 Network.prototype.setData = function(data)
 {
-    this.data = data;
+  this.data = data;
 }
 
 Network.prototype.requestUrl = function(url, handler)
@@ -356,8 +356,8 @@ var UloztoGeneralApi = function()
 
 UloztoGeneralApi.prototype.getSuggestions = function(term, handler)
 {
-    var suggestUrl = this.suggestionsUrl + escape(term);
-    
+    var suggestUrl = this.suggestionsUrl + encodeURIComponent(term);
+    console.log(suggestUrl);
     request(suggestUrl, function(error, response, body) {
         handler(body);
     });
@@ -365,7 +365,7 @@ UloztoGeneralApi.prototype.getSuggestions = function(term, handler)
 
 UloztoGeneralApi.prototype.getSearchResults = function(term, handler)
 {
-    var searchUrl = this.searchUrl + escape(term);
+    var searchUrl = this.searchUrl + encodeURIComponent(term);
     var _match = UloztoDownloadApi.prototype._match;
     
     request({

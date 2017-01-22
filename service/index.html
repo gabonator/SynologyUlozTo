@@ -1,87 +1,250 @@
 <html>
 <head>
-<title>ulozto.cz fast downloader</title>
+<title>Stahovac</title>
 <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link href="//lib.gabo.guru/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+    <script src="//lib.gabo.guru/jquery/jquery-1.10.2.min.js"></script>
+    <script src="//lib.gabo.guru/jquery/jquery-ui.js"></script>
+    <script src="//lib.gabo.guru/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+    <link href="//lib.gabo.guru/bootstrap/jquery-ui-1.10.3.custom.css" rel="stylesheet"/>
+    <link href="//lib.gabo.guru/bootstrap/font-awesome.min.css" rel="stylesheet">
+    <link href="style.css" rel="stylesheet">
+    <link rel="icon" href="favicon.ico" type="image/x-icon"/>
+    <link rel="shortcut icon" href="favicon.ico" type="image/x-icon"/></head>
 </head>
+<body>
+    <div class="logo">
+      <img src="logo.png">
+    </div>
 
-<input type="text" id="search" size=80>
+    <div class="container" style="margin-top: 5%;">
+        <div class="col-md-6 col-md-offset-3">
+            
+            <!-- Search Form -->
+            <form id="searchform" role="form">
+                
+                <!-- Search Field -->
+                <div class="row">
+                    <h1 class="text-center">Hľadaj bársčo...</h1>
+                    <div class="form-group">
+                        <div class="input-group">
+                            <input id="searchinput" class="form-control" autocomplete="off" type="text" name="search" placeholder="Názov filmu... (napr rozpravka 2016)" required/>
+                            <span class="input-group-btn">
+                                <button class="btn btn-success" type="submit"><span class="glyphicon glyphicon-search" aria-hidden="true"><span style="margin-left:10px;">Hľadaj</span></button>
+                            </span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                
+            </form>
+            <!-- End of Search Form -->
+            
+        </div>
+    </div>
+    
+    <div id="loadingContainer" class="text-center" style="display:none;">
+        <button class="btn btn-default btn-lg"><i class="fa fa-refresh fa-spin"></i> Hľadám...</button>
+    </div>
 
-<div id="suggestions"></div>
-<div id="results"></div>
+    <div id="resultsContainer" class="container" style="display:none;">
+        <div class="row">
+            <section class="content">
+                <h1>Výsledky hľadania</h1>
+                <div class="col-md-8 col-md-offset-2">
+                    <div class="panel panel-default">
+                        <div class="panel-body">
+                            <div class="pull-right">
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-success btn-filter" data-target="Video">Filmy</button>
+                                    <button type="button" class="btn btn-warning btn-filter" data-target="Audio">Pesničky</button>
+                                    <button type="button" class="btn btn-danger btn-filter" data-target="Document">Dokumenty</button>
+                                    <button type="button" class="btn btn-default btn-filter" data-target="all">Všetko</button>
+                                </div>
+                            </div>
+                            <div class="table-container">
+                                <table class="table table-filter">
+                                    <tbody id="resultTable">
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="content-footer">
+                        <p>
+                        gabo.guru - 2017<br>
+                        Read about <a href="https://github.com/gabonator/Work-in-progress/tree/master/SynologySearchEngine/UlozToCz" target="_blank">the technology behind</a>
+                        </p>
+                    </div>
+                    
+                </div>
+            </section>
+            
+        </div>
+    </div>
+    
+    <div class="modal" id="modal-gallery" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button class="close" type="button" data-dismiss="modal">×</button>
+                    <h3 class="modal-title"></h3>
+                </div>
+                <div class="modal-body">
+                    <div id="modal-carousel" class="carousel">
+                        
+                        <div class="carousel-inner">
+                        </div>
+                        
+                        <a class="carousel-control left" href="#modal-carousel" data-slide="prev"><i class="glyphicon glyphicon-chevron-left"></i></a>
+                        <a class="carousel-control right" href="#modal-carousel" data-slide="next"><i class="glyphicon glyphicon-chevron-right"></i></a>
+                        
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</body>
 
 <script>
-var server = "";
+    var server = "";
+    
+    String.prototype.replaceAll = function(search, replacement) {
+        var target = this;
+        return target.split(search).join(replacement);
+    };
 
-var delayedChangeTimeout = false;
-$ = function(id) { return document.getElementById(id); }
-$("search").addEventListener("keypress", function(e) {
-  if (e.keyCode == 13)
-  {
-    startSearch();
-    return;
-  }
+    $(document).ready(function () {
 
-  if ( delayedChangeTimeout )
-    clearTimeout(delayedChangeTimeout);
-  delayedChangeTimeout = setTimeout(delayedChange, 200);
-});
+        $('.btn-filter').on('click', function () {
+            var $target = $(this).data('target');
+            if ($target != 'all') {
+                $('.table tr').css('display', 'none');
+                $('.table tr[data-status="' + $target + '"]').fadeIn('slow');
+            } else {
+                $('.table tr').css('display', 'none').fadeIn('slow');
+            }
+        });
+        
+        $("#searchinput").autocomplete({
+            source: function(request, response) {
+                $.ajax({
+                    url: server+"?getSuggestion('"+escape(request.term.replaceAll("'", ""))+"')",
+                    dataType: "json",
+                    success: response
+                });
+            },
+            autoFocus: true,
+            select: function(event, ui)
+            {
+                $("#searchinput").val(ui.item.value);
+                $("#searchform").submit();
+            }
+            //min_length: 3,
+            //delay: 300
+        });
+                      
+        $('#searchform').submit(function() {
+            $("#loadingContainer").show();
+            $("#resultsContainer").hide();
+                                
+            var xmlHttp = new XMLHttpRequest();
+            xmlHttp.open("GET", server+"?doSearch('"+escape($("#searchinput").val())+"')");
+            xmlHttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+            xmlHttp.addEventListener("load", function()
+             {
+                 processSearch(JSON.parse(this.responseText));
+             });
+            xmlHttp.send();
+            return false;
+        });
+                      
+                      
+        $('#modal-carousel').carousel({ interval: false });
+        $('#modal-carousel').on('slid.bs.carousel', function () {
+            $('.modal-title').html($(this).find('.active img').attr('title'));
+        });
+                      
+        $(document).on("click", ".media a", function(e){
+            var src = $(this).find('img').attr("src");
+            var rectitle = $(this).parent().find("div").find("h4").html(); //.parent().find('#title').html();
+            var content = $('.carousel-inner');
+            var title = $('.modal-title');
 
-function delayedChange()
-{
-  var xmlHttp = new XMLHttpRequest();
-  xmlHttp.open("GET", server+"?getSuggestion('"+$("search").value+"')");
-  xmlHttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  xmlHttp.addEventListener("load", function()
-  {
-    processSuggestions(JSON.parse(this.responseText));   
-  });
-  xmlHttp.send();
-}
-
-function processSuggestions(json)
-{
-  var q = "";
-  for (var i in json)
-    q += "<a href=\"#\" onclick=\"selectSuggestion('"+json[i]+"')\">"+json[i]+"</a><br>";
-  $("suggestions").innerHTML = q;
-}
-
-function selectSuggestion(text)
-{ 
-  $("search").value = text;
-  startSearch();
-}
-
-function startSearch()
-{
-  $("suggestions").innerHTML = "";
-  $("results").innerHTML = "Searching...";
-
-  var xmlHttp = new XMLHttpRequest();
-  xmlHttp.open("GET", server+"?doSearch('"+$("search").value+"')");
-  xmlHttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
-  xmlHttp.addEventListener("load", function()
-  {
-    processSearch(JSON.parse(this.responseText));   
-  });
-  xmlHttp.send();
-
-}
-
+            content.empty();
+            title.html(rectitle);
+                       
+            var pattern = src.match("^(.*)\\.160x120\\.\\d+\\.jpg$");
+            if (pattern && pattern.length == 2)
+            {
+                var q = "";
+                for (var i=0; i<10; i++)
+                {
+                    var src = pattern[1] + ".640x360."+i+".jpg";
+                    var subclass = i==0 ? " active" : "";
+                    q += "<div class=\"item" + subclass +"\"><img class=\"thumbnail img-responsive\" src=\"" + src + "\"></div>";
+                }
+                content.html(q);
+            }
+                
+            $('#modal-gallery').modal('show');
+            e.preventDefault();
+        });
+                      
+    });
+ 
 function processSearch(json)
 {
-  var q = "";
-  for (var i in json)
-  {
-    q += "<table><tr><td colspan='2'><b>"+json[i].name+"</b></td></tr>";
-    q += "<td valign='top'>"+json[i].img+"</td>";
-    q += "<td valign='top'>rating: "+json[i].rating+"<br>size: "+json[i].size+"<br>time: "+json[i].time+
-         "<br><input type=\"button\" value=\"Download\" onClick=\"requestDownload('"+json[i].url+"')\">"+
-         "<br><input type=\"button\" value=\"GetUrl\" onClick=\"requestDownload('"+json[i].url+"', processUrl)\">"+
-         "<br><input type=\"button\" value=\"Play in VLC\" onClick=\"requestDownload('"+json[i].url+"', processVlc)\"></td>";
-    q += "</tr></table><br><br>";
-  }
-  $("results").innerHTML = q;
+    var q = "";
+    json.sort(function(a, b) {
+        return parseFloat(b.rating) - parseFloat(a.rating);
+    });
+    
+    for (var i in json)
+    {
+        var itype = (json[i].type == "Video" || json[i].type == "Audio" ) ? json[i].type : "Document";
+
+        q += "<tr data-status=\"" + itype + "\">";
+        q += "<td>";
+        
+        for ( var j=0; j < Math.min(json[i].rating, 5); j++)
+            q += "<i class=\"glyphicon glyphicon-star star\"></i>";
+            
+        for ( var j=0; j < Math.min(-json[i].rating, 5); j++)
+            q += "<i class=\"glyphicon glyphicon-remove badstar\"></i>";
+            
+        q += "</td>";
+        q += "<td>";
+        q += "  <div class=\"media\">";
+        q += "    <a href=\"#\" class=\"thumbnail pull-left\">";
+        q += "      <img src=\""+json[i].imgurl+"\" class=\"media-photo\">";
+        q += "    </a>";
+        q += "    <div class=\"media-body\">";
+        q += "      <span class=\"media-meta pull-right\"><b>" + json[i].size + "</b><br>" + json[i].time + "</span>";
+        q += "      <h4 class=\"title\">";
+        q += "        " + json[i].name.replaceAll("-", " ").replaceAll("_", " ").replaceAll(".", " ");
+
+        q += "        <span class=\"pull-right "+itype+"\">("+json[i].type+")</span>";
+        q += "        </h4><br>";
+        q += "        <p class=\"summary\">";
+        q += "        <input type=\"button\" value=\"Download / play\" onClick=\"requestDownload('"+json[i].url+"')\">";
+//        q += "        <input type=\"button\" value=\"GetUrl\" onClick=\"requestDownload('"+json[i].url+"', processUrl)\">";
+        q += "        <input type=\"button\" value=\"Play in VLC\" onClick=\"requestDownload('"+json[i].url+"', processVlc)\">";
+        q += "        <input type=\"button\" value=\"Rating...\" onClick=\"requestRating(this, '"+json[i].url+"')\">";
+        q +=          "</p>";
+        q += "    </div>";
+        q += "  </div>";
+        q += "</td></tr>";
+    }
+    $("#resultTable").html(q);
+    $("#resultsContainer").show();
+    $("#loadingContainer").hide();
 }
 
 function requestDownload(lnk, process)
@@ -93,9 +256,42 @@ function requestDownload(lnk, process)
   xmlHttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
   xmlHttp.addEventListener("load", function()
   {
-    process(JSON.parse(this.responseText));   
+    process(JSON.parse(this.responseText));
   });
   xmlHttp.send();
+}
+
+function requestRating(_this, lnk)
+{
+    _this.value = "Zisťujem..."
+    
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open("GET", server+"?getRating('"+lnk+"')");
+    xmlHttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xmlHttp.addEventListener("load", function()
+    {
+        if (!this.responseText)
+            return;
+                             
+        var json = JSON.parse(this.responseText);
+        if (!json)
+            return;
+    
+        if (!json.csfdRating)
+        {
+            _this.value = "Neviem :(";
+            return;
+        }
+        _this.value = "CSFD: "+json.csfdRating + "%";
+        $(_this).attr("data-targetUrl", json.csfdUrl);
+                             
+        _this.onclick = null;
+        $(_this).on("click", function()
+        {
+            window.open($(this).attr("data-targetUrl"), '_blank');
+        });
+    });
+    xmlHttp.send();
 }
 
 function processVlc(json)

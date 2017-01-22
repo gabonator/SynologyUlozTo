@@ -9,6 +9,9 @@ var url = require('url');
 var fs = require('fs');
 var webbase = ".";
 
+var uloztoApi = require('./api.js');
+var voiceCaptcha = require('./voice.js').captchaByVoice;
+
 var port = 8034;
 
 console.log("Ulozto.cz interface webserver running at localhost:" + port);
@@ -17,7 +20,7 @@ var currentResponse;
 
 http.createServer(function (request, response) {
 
-  if (0 && milesrequest.headers.origin != "")
+  if (0 && request.headers.origin != "")
   {
     // CORS
     response.setHeader('Access-Control-Allow-Origin', request.headers.origin);
@@ -56,6 +59,8 @@ http.createServer(function (request, response) {
         response.writeHead(200, {'Content-Type': 'text/html'}); 
       else if ( file.substr(-4) == ".css" )
         response.writeHead(200, {'Content-Type': 'text/css'});
+      else if ( file.substr(-4) == ".ico" )
+        response.writeHead(200, {'Content-Type': 'image/x-icon'});
       else
         response.writeHead(200, {'Content-Type': 'text/plain'}); 
 
@@ -64,93 +69,103 @@ http.createServer(function (request, response) {
   } else
   {
     query = unescape(query);
-    
-    if (query.match("^(do|get)\\w+\\('[^\\(\\)']+'\\)$"))
-    {
-        console.log("query='" +query+"'");
-
-        currentResponse = response;
-        eval(query);
-        currentResponse = null;
-    } else
-    {
-        console.log("invalid query='" +query+"'");
-    }
+    new Session(response, query);
   }
 }).listen(port);
 
 
-// search api
-var api = require('./api.js');
-//var imageCaptcha = require('./captcha/ocr/ocr.js').captchaByImageHash;
-var voiceCaptcha = require('./voice.js').captchaByVoice;
-
-function getSuggestion(term)
+var Session = function(response, query)
 {
-  var safeResponse = currentResponse;
-  api.getSuggestions(term, function(data)
-  { 
-    safeResponse.end(data);
-  });
-}
+  this.response = response;
 
-function doSearch(term)
-{
-  var safeResponse = currentResponse;
-  api.getSearchResults(term, function(json)
+  var matches = query.match("^(do|get)(\\w+)\\('[^\\(\\)'\\\\]+'\\)$");
+  if (matches === null || matches.length != 3)
   {
-    safeResponse.end( JSON.stringify(json) );
-  });
+    console.log("invalid query='" +query+"'");
+
+    response.writeHead(400, {"Content-Type": "text/plain"});
+    response.write("400 Bad Request\n");
+    response.end();
+    return;
+  }
+
+  var func = matches[1] + matches[2];
+  if (!this[func] || typeof(this[func]) != "function")
+  {
+    console.log("function not found='" +query+"'");
+
+    response.writeHead(400, {"Content-Type": "text/plain"});
+    response.write("400 Bad Request\n");
+    response.end();
+    return;
+  }
+
+  console.log("query='" +query+"'");
+  eval("this." + query);
 }
 
-function getDownload(lnk)
+Session.prototype.getSuggestion = function(term)
+{
+  uloztoApi.getSuggestions(term, (function(data)
+  { 
+    this.response.end(data);
+  }).bind(this));
+}
+
+Session.prototype.doSearch = function(term)
+{
+  uloztoApi.getSearchResults(term, (function(json)
+  {
+    this.response.end( JSON.stringify(json) );
+  }).bind(this));
+}
+
+Session.prototype.getDownload = function(lnk)
 {
   lnk = lnk.replace("http://ulozto.cz", "");
   lnk = lnk.replace("http://ulozto.sk", "");
   lnk = lnk.replace("https://ulozto.cz", "");
   lnk = lnk.replace("https://ulozto.sk", "");
 
-  var safeResponse = currentResponse;
-  api.getDownloadLink(lnk, captchaHelper, function(url)
+  uloztoApi.getDownloadLink(lnk, captchaHelper, (function(url)
   { 
     var ind = url.lastIndexOf("-");
     if ( ind != -1 )
       url = url.substr(0, ind) + '.' + url.substr(ind+1);
 
-    safeResponse.end(url);
-  });
+    this.response.end(url);
+  }).bind(this));
 }
 
-function getLink(lnk)
+Session.prototype.getLink = function(lnk)
 {
-  var safeResponse = currentResponse;
-  api.getDownloadLink(lnk, captchaHelper, function(url)
+  uloztoApi.getDownloadLink(lnk, captchaHelper, (function(url)
   { 
     var ind = url.lastIndexOf("-");
     if ( ind != -1 )
       url = url.substr(0, ind) + '.' + url.substr(ind+1);
 
-    safeResponse.end( "{\"url\":\""+url+"\"}" );
-  });
+    this.response.end( "{\"url\":\""+url+"\"}" );
+  }).bind(this));
 }
 
-function getVlcLink(url)
+Session.prototype.getVlcLink = function(url)
 {
   var name = url.match(".*/(.*?)\\?")[1]
   var ind = name.lastIndexOf("-");
   if ( ind != -1 )
     name = name.substr(0, ind) + '.' + name.substr(ind+1);
 
-  currentResponse.setHeader('Content-disposition', 'attachment; filename=' + name + ".m3u");
-  currentResponse.setHeader('Content-type', "text/plain");
-  currentResponse.end(
+  this.response.setHeader('Content-disposition', 'attachment; filename=' + name + ".m3u");
+  this.response.setHeader('Content-type', "text/plain");
+  this.response.end(
     '#EXTM3U\n' +
     '#EXTINF:-1,' + name + '\n' +
     url
   );
 }
 
-function getLocalVlcLink(url)
+Session.prototype.getLocalVlcLink = function(url)
 {
   var name = url.match(".*/(.*?)$")[1]
 
@@ -161,35 +176,32 @@ function getLocalVlcLink(url)
   if ( ind != -1 )
     name = name.substr(0, ind) + '.' + name.substr(ind+1);
 
-  currentResponse.setHeader('Content-disposition', 'attachment; filename=' + name + ".m3u");
-  currentResponse.setHeader('Content-type', "text/plain");
-  currentResponse.end(
+  this.response.setHeader('Content-disposition', 'attachment; filename=' + name + ".m3u");
+  this.response.setHeader('Content-type', "text/plain");
+  this.response.end(
     '#EXTM3U\n' +
     '#EXTINF:-1,' + name + '\n' +
     url
   );
 }
 
-function getRating(lnk)
+Session.prototype.getRating = function(lnk)
 {
-    var safeResponse = currentResponse;
-    var getRating = function(lnk)
-    {
-        require("./community.js").getRating(lnk, function(json)
-        {
-            safeResponse.end( JSON.stringify(json) );
-        });
-    };
-
     if (lnk.indexOf("/file-tracking/") != -1)
     {
-        api.translateUrl(lnk, function(lnk)
+        uloztoApi.translateUrl(lnk, (function(lnk)
         {
-            getRating(lnk);
-        });
+            require("./community.js").getRating(lnk, (function(json)
+            {
+                this.response.end( JSON.stringify(json) );
+            }).bind(this));
+        }).bind(this));
     } else
     {
-        getRating(lnk);
+        require("./community.js").getRating(lnk, (function(json)
+        {
+            this.response.end( JSON.stringify(json) );
+        }).bind(this));
     }
 }
 

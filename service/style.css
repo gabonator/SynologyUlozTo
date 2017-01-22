@@ -94,3 +94,6 @@ body {
 .table-filter .media .summary {
     font-size: 14px;
 }
+.logo {
+    position:absolute; left:50%; top:30px; margin-left:-400px; width:152px; height:152px;
+}
