@@ -54,6 +54,8 @@ http.createServer(function (request, response) {
 
       if ( file.substr(-5) == ".html" )
         response.writeHead(200, {'Content-Type': 'text/html'}); 
+      else if ( file.substr(-4) == ".css" )
+        response.writeHead(200, {'Content-Type': 'text/css'});
       else
         response.writeHead(200, {'Content-Type': 'text/plain'}); 
 
@@ -62,10 +64,18 @@ http.createServer(function (request, response) {
   } else
   {
     query = unescape(query);
-    console.log("query='" +query+"'");
-    currentResponse = response;
-    eval(query);
-    currentResponse = null;
+    
+    if (query.match("^(do|get)\\w+\\('[^\\(\\)']+'\\)$"))
+    {
+        console.log("query='" +query+"'");
+
+        currentResponse = response;
+        eval(query);
+        currentResponse = null;
+    } else
+    {
+        console.log("invalid query='" +query+"'");
+    }
   }
 }).listen(port);
 
@@ -158,6 +168,29 @@ function getLocalVlcLink(url)
     '#EXTINF:-1,' + name + '\n' +
     url
   );
+}
+
+function getRating(lnk)
+{
+    var safeResponse = currentResponse;
+    var getRating = function(lnk)
+    {
+        require("./community.js").getRating(lnk, function(json)
+        {
+            safeResponse.end( JSON.stringify(json) );
+        });
+    };
+
+    if (lnk.indexOf("/file-tracking/") != -1)
+    {
+        api.translateUrl(lnk, function(lnk)
+        {
+            getRating(lnk);
+        });
+    } else
+    {
+        getRating(lnk);
+    }
 }
 
 function captchaHelper(json, onResult)

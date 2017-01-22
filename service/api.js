@@ -1,6 +1,6 @@
 'option strict';
 
-module.exports = {getDownloadLink:getDownloadLink, getSuggestions:getSuggestions, getSearchResults:getSearchResults};
+module.exports = {getDownloadLink:getDownloadLink, getSuggestions:getSuggestions, getSearchResults:getSearchResults, translateUrl:translateUrl};
 
 // Globals
 var request = require("request");
@@ -37,6 +37,11 @@ function getDownloadLink(link, captcha, handler)
             handler(response);
         }
     });
+}
+
+function translateUrl(query, handler)
+{
+    return (new UloztoDownloadApi).translateUrl(query, handler);
 }
 
 function getSuggestions(query, handler)
@@ -165,6 +170,20 @@ UloztoDownloadApi.prototype.getDownloadLink = function(link, handler)
     this.currentUrl = "https://ulozto.cz" + link;
     
     (new Network()).requestUrl(this.currentUrl, this.processDownloadLink.bind(this));
+}
+
+UloztoDownloadApi.prototype.translateUrl = function(link, handler)
+{
+    this.currentUrl = "https://ulozto.cz" + link;
+    (new Network()).requestUrl(this.currentUrl, (function(body, header)
+    {
+        header = header.split("\r").join("").split("\n").join("#");
+        var newLocation = this._match(header, "#Location: (.*?)#");
+        if (newLocation)
+            this.currentUrl = newLocation;
+                                                
+        handler(this.currentUrl);
+    }).bind(this));
 }
 
 UloztoDownloadApi.prototype.processDownloadLink = function(body, header)

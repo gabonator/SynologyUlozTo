@@ -1,6 +1,6 @@
 'option strict';
 
-module.exports = {add:addMovie};
+module.exports = {add:addMovie, getRating:getRating};
 
 var request = require('request');
 var verbose = false;
@@ -387,4 +387,9 @@ function addMovie(url)
       request("http://api.gabo.guru/ulozto/?"+toUrl(json));
     }
   );
+}
+
+function getRating(url, handler)
+{
+    process(url, handler);
 }

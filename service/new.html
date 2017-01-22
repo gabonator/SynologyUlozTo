@@ -1,19 +1,19 @@
 <html>
 <head>
-<title>ulozto.cz fast downloader</title>
+<title>ulozto downloader</title>
 <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-        <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
-            <link href="new.css" rel="stylesheet">
-            <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
-            <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
-            <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
-            <link href="http://jquery-ui-bootstrap.github.io/jquery-ui-bootstrap/css/custom-theme/jquery-ui-1.10.3.custom.css" rel="stylesheet"/>
-            <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
-
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/css/bootstrap.min.css" rel="stylesheet" id="bootstrap-css">
+    <script src="//code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="//code.jquery.com/ui/1.11.4/jquery-ui.js"></script>
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.0/js/bootstrap.min.js"></script>
+    <link href="//jquery-ui-bootstrap.github.io/jquery-ui-bootstrap/css/custom-theme/jquery-ui-1.10.3.custom.css" rel="stylesheet"/>
+    <link href="//maxcdn.bootstrapcdn.com/font-awesome/4.2.0/css/font-awesome.min.css" rel="stylesheet">
+    <link href="new.css" rel="stylesheet">
 </head>
 <body>
-    <!--nefunguje diakritika, zobrazenie screenshotov, eval safe-->
+    <!--TODO: nefunguje diakritika-->
+    
     <div class="container" style="margin-top: 5%;">
         <div class="col-md-6 col-md-offset-3">
             
@@ -81,6 +81,30 @@
         </div>
     </div>
     
+    <div class="modal" id="modal-gallery" role="dialog">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button class="close" type="button" data-dismiss="modal">×</button>
+                    <h3 class="modal-title"></h3>
+                </div>
+                <div class="modal-body">
+                    <div id="modal-carousel" class="carousel">
+                        
+                        <div class="carousel-inner">
+                        </div>
+                        
+                        <a class="carousel-control left" href="#modal-carousel" data-slide="prev"><i class="glyphicon glyphicon-chevron-left"></i></a>
+                        <a class="carousel-control right" href="#modal-carousel" data-slide="next"><i class="glyphicon glyphicon-chevron-right"></i></a>
+                        
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button class="btn btn-default" data-dismiss="modal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
     
 </body>
 
@@ -93,13 +117,6 @@
     };
 
     $(document).ready(function () {
-        $('.star').on('click', function () {
-            $(this).toggleClass('star-checked');
-        });
-
-        $('.ckbox label').on('click', function () {
-            $(this).parents('tr').toggleClass('selected');
-        });
 
         $('.btn-filter').on('click', function () {
             var $target = $(this).data('target');
@@ -143,11 +160,43 @@
             xmlHttp.send();
             return false;
         });
+                      
+                      
+        $('#modal-carousel').carousel({ interval: false });
+        $('#modal-carousel').on('slid.bs.carousel', function () {
+            $('.modal-title').html($(this).find('.active img').attr('title'));
+        });
+                      
+        $(document).on("click", ".media a", function(e){
+            var src = $(this).find('img').attr("src");
+            var rectitle = $(this).parent().find("div").find("h4").html(); //.parent().find('#title').html();
+            var content = $('.carousel-inner');
+            var title = $('.modal-title');
+
+            content.empty();
+            title.html(rectitle);
+                       
+            var pattern = src.match("^(.*)\\.160x120\\.\\d+\\.jpg$");
+            if (pattern && pattern.length == 2)
+            {
+                var q = "";
+                for (var i=0; i<10; i++)
+                {
+                    var src = pattern[1] + ".640x360."+i+".jpg";
+                    var subclass = i==0 ? " active" : "";
+                    q += "<div class=\"item" + subclass +"\"><img class=\"thumbnail img-responsive\" src=\"" + src + "\"></div>";
+                }
+                content.html(q);
+            }
+                
+            $('#modal-gallery').modal('show');
+            e.preventDefault();
+        });
+                      
     });
  
 function processSearch(json)
 {
-    // http://bootsnipp.com/snippets/featured/easy-table-filter
     var q = "";
     json.sort(function(a, b) {
         return parseFloat(b.rating) - parseFloat(a.rating);
@@ -169,7 +218,7 @@ function processSearch(json)
         q += "</td>";
         q += "<td>";
         q += "  <div class=\"media\">";
-        q += "    <a href=\"#\" class=\"pull-left\">";
+        q += "    <a href=\"#\" class=\"thumbnail pull-left\">";
         q += "      <img src=\""+json[i].imgurl+"\" class=\"media-photo\">";
         q += "    </a>";
         q += "    <div class=\"media-body\">";
@@ -178,11 +227,12 @@ function processSearch(json)
         q += "        " + json[i].name.replaceAll("-", " ").replaceAll("_", " ").replaceAll(".", " ");
 
         q += "        <span class=\"pull-right "+itype+"\">("+json[i].type+")</span>";
-        q += "        </h4>";
+        q += "        </h4><br>";
         q += "        <p class=\"summary\">";
         q += "        <input type=\"button\" value=\"Download\" onClick=\"requestDownload('"+json[i].url+"')\">";
         q += "        <input type=\"button\" value=\"GetUrl\" onClick=\"requestDownload('"+json[i].url+"', processUrl)\">";
         q += "        <input type=\"button\" value=\"Play in VLC\" onClick=\"requestDownload('"+json[i].url+"', processVlc)\">";
+        q += "        <input type=\"button\" value=\"Rating...\" onClick=\"requestRating(this, '"+json[i].url+"')\">";
         q +=          "</p>";
         q += "    </div>";
         q += "  </div>";
@@ -205,6 +255,35 @@ function requestDownload(lnk, process)
     process(JSON.parse(this.responseText));
   });
   xmlHttp.send();
+}
+
+function requestRating(_this, lnk)
+{
+    _this.value = "Zisťujem..."
+    
+    var xmlHttp = new XMLHttpRequest();
+    xmlHttp.open("GET", server+"?getRating('"+lnk+"')");
+    xmlHttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+    xmlHttp.addEventListener("load", function()
+    {
+        if (!this.responseText)
+            return;
+                             
+        var json = JSON.parse(this.responseText);
+        if (!json)
+            return;
+    
+        _this.value = "CSFD: "+json.csfdRating + "%";
+        $(_this).attr("data-targetUrl", json.csfdUrl);
+                             
+        _this.onclick = null;
+        $(_this).on("click", function()
+        {
+            window.open($(this).attr("data-targetUrl"), '_blank');
+        });
+        console.log(JSON.parse(this.responseText));
+    });
+    xmlHttp.send();
 }
 
 function processVlc(json)
