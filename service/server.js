@@ -11,6 +11,7 @@ var webbase = ".";
 
 var uloztoApi = require('./api.js');
 var voiceCaptcha = require('./voice.js').captchaByVoice;
+var nitro = require('./nitro.js').nitro;
 
 var port = 8034;
 
@@ -235,4 +236,11 @@ var crypto = require('crypto');
     onResult(result);
   }); 
 */
+}
+
+Session.prototype.doNitro = function(urls)
+{
+  var port = nitro(urls.split("|"));
+  this.response.writeHeader(302, {'Location': 'http://localhost:'+port+'/file'});
+  this.response.end();  
 }

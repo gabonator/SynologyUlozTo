@@ -6,8 +6,8 @@ module.exports = {getDownloadLink:getDownloadLink, getSuggestions:getSuggestions
 var request = require("request");
 var decoderClass = require('./blowfish.js').blowfish;
 
-var lastRequest = "";
-var lastResponse = "";
+//var lastRequest = "";
+//var lastResponse = "";
 
 function _ASSERT(cond, message)
 {
@@ -20,11 +20,12 @@ function _ASSERT(cond, message)
 
 function getDownloadLink(link, captcha, handler)
 {
-    if ( link == lastRequest )
-    {
-        handler(lastResponse);
-        return;
-    }
+    // Do not optimize, nitro requires multiple urls for segmented downloading
+//    if ( link == lastRequest )
+//    {
+//        handler(lastResponse);
+//        return;
+//    }
     
     var uloztoApi = new UloztoDownloadApi()
     uloztoApi.setCaptchaEngine(captcha);
@@ -451,6 +452,8 @@ UloztoGeneralApi.prototype.getTypeBySuffix = function(url)
         ".wmv"			: "Video",
         ".mov"			: "Video",
         ".vob"			: "Video",
+        ".3gp"			: "Video",
+        ".flv"			: "Video",
     
         ".mp3"			: "Audio",
         ".flac"			: "Audio",

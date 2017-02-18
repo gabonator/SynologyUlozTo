@@ -151,6 +151,7 @@
         });
                       
         $('#searchform').submit(function() {
+            ga('send', 'event', 'search', 'clicked');
             $("#loadingContainer").show();
             $("#resultsContainer").hide();
                                 
@@ -172,6 +173,8 @@
         });
                       
         $(document).on("click", ".media a", function(e){
+            ga('send', 'event', 'results', 'galleryShown');
+                       
             var src = $(this).find('img').attr("src");
             var rectitle = $(this).parent().find("div").find("h4").html(); //.parent().find('#title').html();
             var content = $('.carousel-inner');
@@ -234,8 +237,10 @@ function processSearch(json)
         q += "        </h4><br>";
         q += "        <p class=\"summary\">";
         q += "        <input type=\"button\" value=\"Download / play\" onClick=\"requestDownload('"+json[i].url+"')\">";
-//        q += "        <input type=\"button\" value=\"GetUrl\" onClick=\"requestDownload('"+json[i].url+"', processUrl)\">";
-        q += "        <input type=\"button\" value=\"Play in VLC\" onClick=\"requestDownload('"+json[i].url+"', processVlc)\">";
+//        q += "        <input type=\"button\" value=\"GetUrl\" onClick=\"requestLink('"+json[i].url+"')\">";
+//        q += "        <input type=\"button\" value=\"+DSM\" onClick=\"requestDsm('"+json[i].url+"')\">";
+        q += "        <input type=\"button\" value=\"FAST\" onClick=\"requestFast('"+json[i].url+"')\">";
+        q += "        <input type=\"button\" value=\"Play in VLC\" onClick=\"requestVlc('"+json[i].url+"')\">";
         q += "        <input type=\"button\" value=\"Rating...\" onClick=\"requestRating(this, '"+json[i].url+"')\">";
         q +=          "</p>";
         q += "    </div>";
@@ -247,7 +252,31 @@ function processSearch(json)
     $("#loadingContainer").hide();
 }
 
-function requestDownload(lnk, process)
+function requestVlc(lnk)
+{
+    ga('send', 'event', 'results', 'vlc');
+    requestMain(lnk, processVlc);
+}
+
+function requestLink(lnk)
+{
+    ga('send', 'event', 'results', 'link');
+    requestMain(lnk, processUrl);
+}
+
+function requestDsm(lnk)
+{
+    ga('send', 'event', 'results', 'dsm');
+    requestMain(lnk, processDsm);
+}
+
+function requestDownload(lnk)
+{
+    ga('send', 'event', 'results', 'download');
+    requestMain(lnk);
+}
+
+function requestMain(lnk, process)
 {
   process = process || processDownload;
 
@@ -263,6 +292,8 @@ function requestDownload(lnk, process)
 
 function requestRating(_this, lnk)
 {
+    ga('send', 'event', 'results', 'rating');
+
     _this.value = "Zisťujem..."
     
     var xmlHttp = new XMLHttpRequest();
@@ -288,6 +319,7 @@ function requestRating(_this, lnk)
         _this.onclick = null;
         $(_this).on("click", function()
         {
+            ga('send', 'event', 'results', 'rating-redirect');
             window.open($(this).attr("data-targetUrl"), '_blank');
         });
     });
@@ -309,5 +341,31 @@ function processDownload(json)
   document.location.href = json.url;
 }
 
+function processDsm(json)
+{
+  prompt("Here is your download link:", json.url);
+  //TODO: dsm login
+}
+
+function requestFast(lnk)
+{
+  ga('send', 'event', 'results', 'fast');
+
+  var links = [];
+  var count = 3;
+  for (var i=0; i<count; i++)
+  {
+    requestMain(lnk, function (json)
+    {
+      links.push(json.url);
+      if (links.length == count)
+      {
+        document.location.href = server+"?doNitro('"+links.join("|")+"')";
+      }
+    });
+  }
+}
+
 </script>
-</html>                                            
+<script>function ga() {}</script>
+</html>
