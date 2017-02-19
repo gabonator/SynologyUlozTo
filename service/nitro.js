@@ -4,7 +4,7 @@ var Readable = require('stream').Readable;
 var util = require('util');
 var fs = require('fs');
 
-var ReadStream = function(source, offset, size) 
+var ReadStream = function(source, offset, size, redirectionHandler) 
 {
   Readable.call(this, {});
 
@@ -18,9 +18,12 @@ var ReadStream = function(source, offset, size)
 
   this.checkRedirect = function(serverResponse) 
   {
+    //console.log(serverResponse.statusCode);
     if (serverResponse.statusCode == 302)
     {
       // TODO : duplicty
+      redirectionHandler.redirection(source, serverResponse.headers.location);
+
       this.options = url.parse(serverResponse.headers.location);
       this.options.headers = this.headers;
       this.options.headers.host = this.options.host;
@@ -98,6 +101,28 @@ var Nitro = function(urls, info)
   this.uid = 0;
 }
 
+Nitro.prototype.redirection = function(from, to)
+{
+  // TODO: check code
+  console.log("Redirection " + from + " -> " + to);
+  for (var i in this.segments) 
+    if (this.segments[i].url == from)
+    {
+      this.segments[i].url = to;
+      console.log("Redirected!");
+    }
+
+  return;
+  console.log("Redirection " + from + " -> " + to);
+  for (var i in this.urls)
+    if (this.urls[i] == from)
+    {
+      this.urls[i] = to;
+      return;
+    }
+  console.log("Redirection not applied!");
+}
+
 Nitro.prototype.download = function(output)
 {
   this.downloadRange(0, -1, output);
@@ -135,7 +160,7 @@ Nitro.prototype.stop = function()
 
   if (this.statsTransferred != 0)
   {
-    this.statsTransferred == 0;
+    this.statsTransferred = 0;
     console.log("Transferred "+this.statsTransferred);
   }
 
@@ -195,8 +220,8 @@ Nitro.prototype.prepareStream = function(segment)
   segment.targetoffset = this.readoffset;
   segment.targetsize = size;
 
-  //console.log("Reading " + segment.targetoffset + "..." + (segment.targetoffset+segment.targetsize));
-  segment.stream = new ReadStream(segment.url, segment.targetoffset, segment.targetsize);
+  console.log("Reading " + segment.targetoffset + "..." + (segment.targetoffset+segment.targetsize));
+  segment.stream = new ReadStream(segment.url, segment.targetoffset, segment.targetsize, this);
 
   segment.offset = 0;
   segment.finished = false;
@@ -220,7 +245,10 @@ Nitro.prototype.prepareStream = function(segment)
 
   segment.stream.on('end', (function() {
     this.finished = true;
-    //console.log("Done " + this.targetoffset + "..." + (this.targetoffset+this.targetsize));
+    if ( this.failed )
+      console.log("Cancelled " + this.targetoffset + "..." + (this.targetoffset+this.targetsize));
+    else
+      console.log("Done " + this.targetoffset + "..." + (this.targetoffset+this.targetsize));
   }).bind(segment));
 
   segment.stream.on('end', (function() {
@@ -274,23 +302,24 @@ Nitro.prototype.maintenance = function()
 
     var passed = ((new Date).getTime() - this.statsStarted) / 1000;
     var speed = (this.statsTransferred/1024/passed).toFixed(1);
+    var percent = (this.statsTransferred/this.filesize*100).toFixed(1);
 
     if (!segment.echo)
     {
       if ( segment.targetsize != segment.target.length )
-      {
-        console.log("Writing part " + segment.targetoffset + "..." + (segment.targetoffset+segment.targetsize) + " speed = " + speed + " kBps");
+      {                                                                                                                                         
+        console.log("Writing part " + segment.targetoffset + "..." + (segment.targetoffset+segment.targetsize) + " speed = " + speed + " kBps " + percent + "%");
         var subBuf = new Buffer(segment.targetsize);
         segment.target.copy(subBuf, 0, 0, segment.targetsize);
         this.output.write(subBuf); 
       } else
       {
-        console.log(segment.id + "> Writing all " + segment.targetoffset + "..." + (segment.targetoffset+segment.targetsize) + " speed = " + speed + " kBps");
+        console.log(segment.id + "> Writing all " + segment.targetoffset + "..." + (segment.targetoffset+segment.targetsize) + " speed = " + speed + " kBps " + percent + "%");
         this.output.write(segment.target); 
       }
     } else
     {
-      console.log("Streamed all " + segment.targetoffset + "..." + (segment.targetoffset+segment.targetsize) + " speed = " + speed + " kBps");
+      console.log("Streamed all " + segment.targetoffset + "..." + (segment.targetoffset+segment.targetsize) + " speed = " + speed + " kBps " + percent + "%");
     }
 
     if (this.readbytes > 0)
@@ -435,6 +464,8 @@ Session.prototype.startServer = function(port)
   this.server.on('connection', (function(socket) {
     var _socketId = this.socketId++
     this.sockets[_socketId] = socket;
+
+    console.log("Got socket");
 
     socket.on('close', (function() {
       delete this.sockets[_socketId];

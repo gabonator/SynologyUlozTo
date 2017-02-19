@@ -1,5 +1,5 @@
 "use strict";
-process.title = 'Ulozto.cz interface';
+process.title = 'Streamer';
 
 
 // Web server ==============================================================
