@@ -114,7 +114,7 @@
 
 <script>
     var server = "";
-    
+  
     String.prototype.replaceAll = function(search, replacement) {
         var target = this;
         return target.split(search).join(replacement);
@@ -237,7 +237,7 @@ function processSearch(json)
         q += "        </h4><br>";
         q += "        <p class=\"summary\">";
         q += "        <input type=\"button\" value=\"Download / play\" onClick=\"requestDownload('"+json[i].url+"')\">";
-//        q += "        <input type=\"button\" value=\"GetUrl\" onClick=\"requestLink('"+json[i].url+"')\">";
+        q += "        <input type=\"button\" value=\"GetUrl\" onClick=\"requestLink('"+json[i].url+"')\">";
 //        q += "        <input type=\"button\" value=\"+DSM\" onClick=\"requestDsm('"+json[i].url+"')\">";
         q += "        <input type=\"button\" value=\"FAST\" onClick=\"requestFast('"+json[i].url+"')\">";
         q += "        <input type=\"button\" value=\"Play in VLC\" onClick=\"requestVlc('"+json[i].url+"')\">";
@@ -350,9 +350,8 @@ function processDsm(json)
 function requestFast(lnk)
 {
   ga('send', 'event', 'results', 'fast');
-
   var links = [];
-  var count = 3;
+  var count = 5;
   for (var i=0; i<count; i++)
   {
     requestMain(lnk, function (json)

@@ -5,7 +5,7 @@ class SynoDLMSearchUlozto
   private $communityUrl = "http://api.gabo.guru/ulozto/";
   private $blowfish;
   private $community;
-
+  
   public function __construct() 
   {
     include "blowfish.php";
@@ -116,6 +116,8 @@ class SynoDLMSearchUlozto
 
       $type = $seeds > 0 ? "Video" : "";
 
+      if (strstr($download, "/file-tracking/") !== false)
+        $download .= "?q=".rawurlencode($name);
       $plugin->addResult($name, $download, 0, $year."-04-01", $about, $hash, $seeds, $leechs, $type);
     } 
   }

@@ -34,7 +34,7 @@ StartService() {
 		cd ${TARGET_DIR} && nohup node server.js > ${LOGFILE} 2>&1&
 		sleep 3
 		#echo $! > "$PIDFILE"
-		ps -e | grep 'Ulozto.cz' | awk '{print $1}' > ${PIDFILE}
+		ps -e | grep 'ulozto_streamer' | awk '{print $1}' > ${PIDFILE}
   else
 		echo "${SYNOPKG_PKGNAME} service already running."
   fi

@@ -1,6 +1,5 @@
 "use strict";
-process.title = 'Streamer';
-
+process.title = 'ulozto_streamer';
 
 // Web server ==============================================================
 var request = require("request");
@@ -17,11 +16,8 @@ var port = 8034;
 
 console.log("Ulozto.cz interface webserver running at localhost:" + port);
 
-var currentResponse;
-
 http.createServer(function (request, response) {
-
-  if (0 && request.headers.origin != "")
+  if (typeof(request.headers.origin) != "undefined")
   {
     // CORS
     response.setHeader('Access-Control-Allow-Origin', request.headers.origin);
@@ -70,13 +66,14 @@ http.createServer(function (request, response) {
   } else
   {
     query = unescape(query);
-    new Session(response, query);
+    new Session(request, response, query);
   }
 }).listen(port);
 
 
-var Session = function(response, query)
+var Session = function(request, response, query)
 {
+  this.request = request;
   this.response = response;
 
   var matches = query.match("^(do|get)(\\w+)\\('[^\\(\\)'\\\\]+'\\)$");
@@ -240,7 +237,11 @@ var crypto = require('crypto');
 
 Session.prototype.doNitro = function(urls)
 {
+  var host = this.request.headers.host;
+  if (host.indexOf(":") != -1)
+    host = host.substr(0, host.indexOf(":"));
+
   var port = nitro(urls.split("|"));
-  this.response.writeHeader(302, {'Location': 'http://localhost:'+port+'/file'});
+  this.response.writeHeader(302, {'Location': 'http://'+host+':'+port+'/file'});
   this.response.end();  
 }

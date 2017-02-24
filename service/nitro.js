@@ -160,8 +160,8 @@ Nitro.prototype.stop = function()
 
   if (this.statsTransferred != 0)
   {
-    this.statsTransferred = 0;
     console.log("Transferred "+this.statsTransferred);
+    this.statsTransferred = 0;
   }
 
   this.segments = [];
@@ -541,6 +541,6 @@ module.exports.nitro = function(links)
 {
   var port = manager.start(links);
   console.log("new instance at port = " + port);
-  return port
+  return port;
 }
 
