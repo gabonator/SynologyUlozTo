@@ -174,6 +174,8 @@ Nitro.prototype.retryStream = function(segment)
   segment.finished = false;
   segment.failed = false;
 
+  var _this = this;
+
   // TODO: duplicity
   segment.stream.on('data', (function(record) {
     if (typeof(record.length) == "undefined")
@@ -437,10 +439,13 @@ Session.prototype.startServer = function(port)
       return;
     }
 
-    var header = {
-//      "content-type": this.info["content-type"],
-      "content-length": this.info.size
-    };
+    var header = {};
+
+    if ( this.info["content-type"] )
+      header["content-type"] = this.info["content-type"];
+
+    if ( this.info["content-disposition"] )
+      header["content-disposition"] = this.info["content-disposition"];
 
     if (typeof(this.info["content-disposition"]) != "undefined")
       header["content-disposition"] = this.info["content-disposition"];
@@ -449,12 +454,26 @@ Session.prototype.startServer = function(port)
     {
       request.socket.nitro = this.nitro;
       var range = request.headers["range"].match("^bytes=(\\d+)\\-(\\d*)$");
+      if (range[2] == "")
+      {
+        header["content-range"] = "bytes " + range[1] + "-" + (this.info.size-1) + "/" + this.info.size;
+        header["content-length"] = this.info.size-parseInt(range[1]);
+      }
+      else
+      {
+        header["content-range"] = "bytes " + range[1] + "-" + range[2] + "/" + this.info.size;
+        header["content-length"] = parseInt(range[2]) - parseInt(range[1]) + 1;
+      }
+
       range = [parseInt(range[1]), range[2] == "" ? -1 : (parseInt(range[2])+1)];
+
+//console.log(header);
 
       response.writeHeader(206, header);
       this.nitro.downloadRange(range[0], range[1], response);
     } else
     {
+      header["content-length"] = this.info.size;
       request.socket.nitro = this.nitro;
       response.writeHeader(200, header);
       this.nitro.download(response);
@@ -544,3 +563,6 @@ module.exports.nitro = function(links)
   return port;
 }
 
+
+// test
+//manager.start(["http://pub.gabo.guru/video.mp4"]);

@@ -454,6 +454,7 @@ UloztoGeneralApi.prototype.getTypeBySuffix = function(url)
         ".vob"			: "Video",
         ".3gp"			: "Video",
         ".flv"			: "Video",
+        ".m4v"			: "Video",
     
         ".mp3"			: "Audio",
         ".flac"			: "Audio",
