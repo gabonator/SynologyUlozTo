@@ -130,7 +130,6 @@ Nitro.prototype.download = function(output)
 
 Nitro.prototype.downloadRange = function(first, last, output)
 {
-//  console.log("dr1");
   this.stop();
 
   this.output = output;
@@ -195,13 +194,10 @@ Nitro.prototype.retryStream = function(segment)
 
   segment.stream.on('end', (function() {
     this.finished = true;
+    _this.maintenance();
     //console.log("Done " + this.targetoffset + "..." + (this.targetoffset+this.targetsize));
   }).bind(segment));
-
-  segment.stream.on('end', (function() {
-    this.maintenance();
-  }).bind(this));
-
+	
   segment.stream.on('error', function(error) {
     console.log("Error!!!!: "+error);
   });
@@ -251,11 +247,9 @@ Nitro.prototype.prepareStream = function(segment)
       console.log("Cancelled " + this.targetoffset + "..." + (this.targetoffset+this.targetsize));
     else
       console.log("Done " + this.targetoffset + "..." + (this.targetoffset+this.targetsize));
-  }).bind(segment));
 
-  segment.stream.on('end', (function() {
-    this.maintenance();
-  }).bind(this));
+    _this.maintenance();
+  }).bind(segment));
 
   segment.stream.on('error', function(error) {
     console.log("Error!!!!: "+error);
@@ -277,7 +271,7 @@ Nitro.prototype.addStream = function(url, echo)
   if (echo)
     segment.target = this.output;
   else
-    segment.target = new Buffer(this.blocksize, "binary");
+    segment.target = Buffer.alloc(this.blocksize);
 
   this.segments.push(segment);
 }
@@ -308,17 +302,18 @@ Nitro.prototype.maintenance = function()
 
     if (!segment.echo)
     {
-      if ( segment.targetsize != segment.target.length )
-      {                                                                                                                                         
-        console.log("Writing part " + segment.targetoffset + "..." + (segment.targetoffset+segment.targetsize) + " speed = " + speed + " kBps " + percent + "%");
-        var subBuf = new Buffer(segment.targetsize);
+        // always duplicate buffer!!! it is somehow shared and when the buffer is flushed asynchronously, it contains corrupted data
+//      if ( segment.targetsize != segment.target.length )
+//      {                                                                                                                                         
+        console.log("Writing " + segment.targetoffset + "..." + (segment.targetoffset+segment.targetsize) + " speed = " + speed + " kBps " + percent + "%");
+        var subBuf = Buffer.alloc(segment.targetsize);
         segment.target.copy(subBuf, 0, 0, segment.targetsize);
         this.output.write(subBuf); 
-      } else
-      {
-        console.log(segment.id + "> Writing all " + segment.targetoffset + "..." + (segment.targetoffset+segment.targetsize) + " speed = " + speed + " kBps " + percent + "%");
-        this.output.write(segment.target); 
-      }
+//      } else
+//      {
+//        console.log(segment.id + "> Writing all " + segment.targetoffset + "..." + (segment.targetoffset+segment.targetsize) + " speed = " + speed + " kBps " + percent + "%");
+//        this.output.write(segment.target); 
+//      }
     } else
     {
       console.log("Streamed all " + segment.targetoffset + "..." + (segment.targetoffset+segment.targetsize) + " speed = " + speed + " kBps " + percent + "%");
@@ -330,7 +325,7 @@ Nitro.prototype.maintenance = function()
       {
         console.log("Switching piped segment to buffered");
         segment.echo = false;
-        segment.target = new Buffer(this.blocksize, "binary");
+        segment.target = Buffer.alloc(this.blocksize);
       }
 
       this.prepareStream(segment);
@@ -340,7 +335,6 @@ Nitro.prototype.maintenance = function()
   if (this.segments.length == 0)
   {
     this.output.end();
-//console.log("dr2");
     this.stop();
     return;
   }
@@ -377,7 +371,7 @@ Probe.prototype.process = function()
 Probe.prototype.followUrl = function(lnk, handler)
 {
   var target = url.parse(lnk);
-  var options = {method: 'GET', host: target.host, port: target.port ? target.port : 80, path: target.path, headers:{"Range":"bytes=0-0"}};  
+  var options = {method: 'GET', host: target.hostname, port: target.port ? target.port : 80, path: target.path, headers:{"Range":"bytes=0-0"}};  
   var req = http.request(options, (function(res) {
     console.log(res.statusCode);
     if ( res.statusCode == 302 )
@@ -488,7 +482,6 @@ Session.prototype.startServer = function(port)
 
     socket.on('close', (function() {
       delete this.sockets[_socketId];
-//console.log("dr3");
 
       if (socket.nitro)
         socket.nitro.stop();
@@ -500,8 +493,6 @@ Session.prototype.startServer = function(port)
 
 Session.prototype.stopServer = function()
 {
-//console.log("dr4");
-
   this.server.close();
   this.server = null;
 
@@ -541,8 +532,6 @@ Manager.prototype.getNextPort = function()
 
 Manager.prototype.killSession = function(port)
 {
-//console.log("dr6");
-
   for (var i=0; i<this.sessions.length; i++)
   {
     if ( this.sessions[i].port == port )
@@ -564,5 +553,24 @@ module.exports.nitro = function(links)
 }
 
 
-// test
-//manager.start(["http://pub.gabo.guru/video.mp4"]);
+/*
+// single segment download test
+manager.start(["http://pub.gabo.guru/video.mp4"]);
+
+// multiple segment download test
+
+var express = require("express");
+var app = express();
+app.use(express.static('public'));
+app.listen(8888, function() {
+  console.log("web: Server started at localhost:8888");
+});
+
+manager.start([
+"http://127.0.0.1:8888/public/100mb",
+"http://127.0.0.1:8888/public/100mb",
+"http://127.0.0.1:8888/public/100mb",
+"http://127.0.0.1:8888/public/100mb",
+]);
+
+*/

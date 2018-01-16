@@ -1,0 +1,94 @@
+<html>
+<head>
+<script type="text/javascript" src="//lib.gabo.guru/flexigrid/jquery-1.7.js"></script>
+<link rel="StyleSheet" href="//lib.gabo.guru/flexigrid/css/flexigrid.css" type="text/css"/>
+<script language="javascript" src="//lib.gabo.guru/flexigrid/js/flexigrid.js"></script>
+</head>
+
+<body>
+<div id="flexLive"></div>
+</body>
+
+<script>data = []; add = function(json) { data.push(json); }</script>
+<script src="http://api.gabo.guru/ulozto/"></script>
+<script language="javascript">
+
+function getRating(rating, url)
+{
+  if (!url)
+    return rating || "";
+  return '<a href="'+url+'">'+rating+'</a>';
+}
+
+function getUrl(url)
+{
+  return url.substr(url.lastIndexOf('/')+1);
+}
+
+var flexdata = [];
+var used = {};
+for (var i in data)
+{
+  var entry = data[i].args;
+  if (used[entry.rawTitle])
+    continue;
+  used[entry.rawTitle] = 1;
+  if (entry.rawTitle.indexOf("limit exceeded") != -1)
+    continue;
+
+  flexdata.push({cell:[data[i].time, data[i].ip, entry.rawTitle, entry.release || "", 
+    getRating(entry.csfdRating, entry.csfdUrl), getRating(entry.imdbRating, entry.imdbUrl),
+    getUrl(entry.url)]});
+}
+
+function reorder(name, order)
+{
+  var field = ["date", "ip", "query", "year", "csfd", "imdb", "url"].indexOf(name);
+  var polar = order == "asc" ? 1 : -1;
+  var strip = function(html) { var tmp = document.createElement("DIV"); tmp.innerHTML = html; return tmp.textContent || tmp.innerText || ""; }
+
+  flexdata.sort(
+    function(x, y)
+    {
+      return strip(x.cell[field]) > strip(y.cell[field]) ? polar : -polar;
+    }
+  );
+}
+
+var flexLive = $("#flexLive").flexigrid({
+ 	dataType : 'json',
+ 	colModel : [ 
+ 		{ display : 'Date', name : 'date', width: 100, sortable : true, align : 'center' }, 
+ 		{ display : 'Ip', name : 'ip', width: 100, sortable : true, align : 'left' }, 
+ 		{ display : 'Query', name : 'query', width: 300, sortable : true, align : 'left', hide : false},
+ 		{ display : 'Year', name : 'year', width: 40, sortable : true, align : 'center', hide : false},
+ 		{ display : 'Csfd', name : 'csfd', width: 40, sortable : true, align : 'center', hide : false},
+ 		{ display : 'Imdb', name : 'imdb', width: 40, sortable : true, align : 'center', hide : false},
+ 		{ display : 'Url', name : 'url', width: 200, sortable : false, align : 'left', hide : false},
+ 	],
+
+ 	sortname : "query",
+ 	sortorder : "asc",
+ 	usepager : false,
+ 	title : 'Recent downloads',
+ 	useRp : true,
+ 	rp : 20,
+ 	showTableToggleBtn : true,
+ 	singleSelect: true,
+ 	width : 1000,
+ 	height : 500,
+    onChangeSort: function(name, order) {
+      console.log(name + "/"+ order);
+      reorder(name, order);
+      $("#flexLive").flexAddData({total:flexdata.length, page:1, rows:flexdata}).flexReload();
+    }
+  });
+
+setTimeout(function()
+{
+  reorder("date", "desc");
+  flexLive.flexAddData({total:flexdata.length, page:1, rows:flexdata}).flexReload();
+}, 0);
+
+</script>
+</html>
