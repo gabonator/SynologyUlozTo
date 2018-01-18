@@ -1,8 +1,3 @@
-$v = [System.Environment]::OSVersion.Version
-Write-Output $v
-
-exit
-
 $source = "..\service\"
 $destination = "portable.zip"
 
