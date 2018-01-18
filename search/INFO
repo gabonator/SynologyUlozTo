@@ -2,7 +2,7 @@
 "name": "ulozto",
 "displayname": "Ulozto.cz",
 "description": "Ulozto file sharing service by Ulozto devel team",
-"version": "8.1",
+"version": "8.2",
 "site": "http://ulozto.cz",
 "module": "search.php",
 "type": "search",

@@ -10,6 +10,8 @@
  
   if ($_SERVER["QUERY_STRING"] == "test")
   {
+    echo("<html><head><meta http-equiv=\"Content-type\" content=\"text/html; charset=utf-8\"/></head><body>");
+
     ini_set('display_errors', 1);
     require "search.php";
 
@@ -43,6 +45,7 @@
     curl_close($curl); 
     unset($plugin);
 
+    echo("</body></html>");
     die();
   }
 
@@ -62,7 +65,7 @@
   {
     $aux = "";
     $disallowed = "<>{}\"\r\n";
-    for ($i = 0; $i < strlen($txt); $i++)
+    for ($i = 0; $i < min(100, strlen($txt)); $i++)
     {
       if (strpos($disallowed, $txt[$i]) === false)
         $aux .= $txt[$i];
@@ -84,7 +87,9 @@
   }
   
   $args = "";
-  $keywords = array("url", "release", "csfdRating", "csfdTitle", "imdbRating", "imdbTitle", "imdbUrl", "csfdUrl", "rawTitle");
+  $keywords = array("url", "release", "csfdRating", "csfdTitle", "imdbRating", "imdbTitle", "imdbUrl", "csfdUrl", "rawTitle",
+    "user_path", "user_os", "user_host");
+
   foreach ($keywords as $keyword)
   {
     if (isset($_GET[$keyword]))

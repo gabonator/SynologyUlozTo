@@ -1,5 +1,5 @@
 package="Ulozto"
-version=“8.1"
+version=“8.2"
 displayname="Ulozto Service"
 maintainer="Ulozto devel team"
 maintainer_url="https://github.com/gabonator/SynologyUlozTo"

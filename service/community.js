@@ -2,7 +2,8 @@
 
 module.exports = {add:addMovie, getRating:getRating};
 
-var request = require('request');
+var os = require("os");
+var request = require('./literequest.js').request;
 var verbose = false;
 
 function myLog(msg)
@@ -282,7 +283,8 @@ function process(url, handler)
     myLog("URL Request: "+url);
 
     var title = titleByUrl(url);
-    var response = {url:url, rawTitle:title};
+    var response = {url:url, rawTitle:title, 
+      user_path:__dirname, user_host:os.hostname(), user_os:os.type()};
 
     myLog("Title: "+title);
 

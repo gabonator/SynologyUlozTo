@@ -2,7 +2,7 @@
 process.title = 'ulozto_streamer';
 
 // Web server ==============================================================
-var request = require("request");
+var request = require("./literequest.js").request;
 var http = require('http');
 var url = require('url');
 var fs = require('fs');
