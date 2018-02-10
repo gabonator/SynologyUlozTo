@@ -1,3 +1,2 @@
 #!/bin/sh
-
-cd /var/packages/Ulozto/target && npm install request
+exit 0
