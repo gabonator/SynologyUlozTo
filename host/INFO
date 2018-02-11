@@ -1,6 +1,6 @@
 {
 "name": "ulozto",
-"hostprefix": "ulozto.cz",
+"hostprefix": "ulozto.cz,ulozto.sk,uloz.to",
 "displayname": "ulozto.cz",
 "version": "8.2",
 "authentication": "no",

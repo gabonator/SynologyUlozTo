@@ -132,7 +132,7 @@ UloztoDownloadApi.prototype.processDownloadLink = function(err, res, body)
 
     if (body.indexOf(this._formId) != -1)
     {
-        this.processRequest(body);
+        this.processRequest(err, res, body);
         return;
     }
 

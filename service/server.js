@@ -120,8 +120,10 @@ Session.prototype.doSearch = function(term)
 
 Session.prototype.getDownload = function(lnk)
 {
+  lnk = lnk.replace("http://uloz.to", "");
   lnk = lnk.replace("http://ulozto.cz", "");
   lnk = lnk.replace("http://ulozto.sk", "");
+  lnk = lnk.replace("https://uloz.to", "");
   lnk = lnk.replace("https://ulozto.cz", "");
   lnk = lnk.replace("https://ulozto.sk", "");
 
